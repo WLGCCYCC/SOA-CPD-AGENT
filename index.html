@@ -77,6 +77,9 @@ header h1 { font-size: 15px; font-weight: 600; }
 .bubble h2, .bubble h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
 .bubble hr { border: none; border-top: 1px solid var(--gray-200); margin: 8px 0; }
 .bubble code { background: var(--gray-100); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.bubble table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 13px; }
+.bubble td { padding: 5px 8px; border: 1px solid var(--gray-200); }
+.bubble tr:first-child td { font-weight: 600; background: var(--gray-100); }
 .typing { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
 .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -243,6 +246,11 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
       <input type="password" id="key-input" placeholder="sk-ant-api03-..." />
       <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Get yours at platform.anthropic.com · Stored locally only, never shared</p>
     </div>
+    <div>
+      <label>Free CPD Library — Published CSV URL (optional)</label>
+      <input type="text" id="library-input" placeholder="Publish the 'Free CPD Library' tab the same way..." />
+      <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Saves tokens — agent checks this list before searching the web again</p>
+    </div>
     <button class="modal-btn" onclick="setupAndStart()">Connect & Start →</button>
     <p class="modal-note">Built by Shawn Yu, FSA — for actuaries, by an actuary.</p>
   </div>
@@ -262,6 +270,23 @@ let dashboardData = { total:0, guided:0, selfStudy:0, count:0, profHrs:0, byYear
 let pendingImage = null;
 let recognition = null;
 let isListening = false;
+let libraryCache = "";
+
+async function loadLibrary() {
+  try {
+    // Derive library CSV URL from the main CSV URL pattern (same publish, different gid would differ per sheet —
+    // user can set this in Settings; fallback: skip silently if not configured)
+    const libUrl = localStorage.getItem("cpd_library_csv_url");
+    if (!libUrl) return;
+    const res = await fetch(libUrl);
+    if (!res.ok) return;
+    const text = await res.text();
+    const lines = text.split("\n").filter(l => l.trim() && !l.match(/^Title,Provider/));
+    if (lines.length > 1) {
+      libraryCache = lines.slice(1, 21).join("\n"); // cap at 20 entries to save tokens
+    }
+  } catch(e) { console.warn("Library load skipped:", e.message); }
+}
 
 // ── CSV / Dashboard ──────────────────────────────────────────────────────────
 function splitCSVLine(line) {
@@ -481,27 +506,45 @@ function clearImage() {
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
 function renderMarkdown(text) {
-  return text
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g,"<em>$1</em>")
-    .replace(/^### (.+)$/gm,"<h3>$1</h3>")
-    .replace(/^## (.+)$/gm,"<h2>$1</h2>")
-    .replace(/^# (.+)$/gm,"<h1>$1</h1>")
-    .replace(/^---+$/gm,"<hr>")
-    .replace(/^\| (.+) \|$/gm, (match) => {
-      const cells = match.split("|").filter(c=>c.trim()&&!c.match(/^[-| ]+$/));
-      return "<tr>" + cells.map(c=>`<td>${c.trim()}</td>`).join("") + "</tr>";
-    })
-    .replace(/(<tr>.*<\/tr>\n?)+/gs, m => `<table>${m}</table>`)
-    .replace(/^- (.+)$/gm,"<li>$1</li>")
-    .replace(/(<li>.*<\/li>\n?)+/gs, m => `<ul>${m}</ul>`)
-    .replace(/^\d+\. (.+)$/gm,"<li>$1</li>")
-    .replace(/\n{2,}/g,"</p><p>")
-    .replace(/\n/g,"<br>")
-    .replace(/^(.+)$/s, "<p>$1</p>")
-    .replace(/<p><(h[123]|ul|ol|table|hr)/g,"<$1")
-    .replace(/<\/(h[123]|ul|ol|table|hr)><\/p>/g,"</$1>");
+  // Remove markdown table separator lines like |---|---|---|
+  text = text.replace(/^\|?[\s:-]*-[\s:|-]*\|?$/gm, "");
+
+  const lines = text.split("\n");
+  let html = "";
+  let inTable = false, inList = false;
+
+  for (let raw of lines) {
+    let line = raw.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    line = line.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>");
+
+    const trimmed = line.trim();
+
+    // Table row (has pipes, not a separator)
+    if (/^\|.*\|$/.test(trimmed) && !/^[\s|:-]*$/.test(trimmed)) {
+      const cells = trimmed.split("|").map(c=>c.trim()).filter((c,i,arr)=> i>0 && i<arr.length-1 || (c!==""));
+      const filtered = trimmed.split("|").filter((c,i,arr)=>i>0&&i<arr.length-1);
+      if (!inTable) { html += "<table>"; inTable = true; }
+      html += "<tr>" + filtered.map(c=>`<td>${c.trim()}</td>`).join("") + "</tr>";
+      continue;
+    } else if (inTable) { html += "</table>"; inTable = false; }
+
+    if (/^---+$/.test(trimmed)) { html += "<hr>"; continue; }
+    if (/^### /.test(trimmed)) { html += `<h3>${trimmed.slice(4)}</h3>`; continue; }
+    if (/^## /.test(trimmed))  { html += `<h2>${trimmed.slice(3)}</h2>`; continue; }
+    if (/^# /.test(trimmed))   { html += `<h1>${trimmed.slice(2)}</h1>`; continue; }
+
+    if (/^[-*] /.test(trimmed)) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += `<li>${trimmed.slice(2)}</li>`;
+      continue;
+    } else if (inList) { html += "</ul>"; inList = false; }
+
+    if (trimmed === "") { html += "<br>"; }
+    else { html += `<p>${line}</p>`; }
+  }
+  if (inTable) html += "</table>";
+  if (inList) html += "</ul>";
+  return html;
 }
 
 function addMessage(role, content, logCard) {
@@ -546,40 +589,19 @@ async function sendMessage() {
   showTyping();
 
   const { total, guided, selfStudy, count, profHrs, byYear } = dashboardData;
-  const currentYear = new Date().getFullYear();
 
-  const ctx = `Shawn's current CPD status (rolling 2-year window):
-- Total: ${total.toFixed(1)} / 80 hrs required
-- Guided: ${guided.toFixed(1)} / 30 hrs required  
-- Self-Study: ${selfStudy.toFixed(1)} hrs
-- Professionalism: ${profHrs.toFixed(1)} hrs logged
-- Activities: ${count}
-- By year: ${JSON.stringify(byYear)}
-- CIA compliant: ${total>=80&&guided>=30?"YES":"NOT YET"}
-- Still needs: ${Math.max(0,80-total).toFixed(1)} total, ${Math.max(0,30-guided).toFixed(1)} guided`;
+  const ctx = `Status: ${total.toFixed(1)}/80 total hrs, ${guided.toFixed(1)}/30 guided hrs, ${selfStudy.toFixed(1)} self-study, ${profHrs.toFixed(1)} professionalism hrs, ${count} activities. By year: ${JSON.stringify(byYear)}. CIA compliant: ${total>=80&&guided>=30?"YES":"NOT YET"}.`;
 
-  const system = `You are a CPD tracking assistant for Shawn Yu, FSA — a Canadian actuary and dual member of CIA and SOA.
+  const system = `CPD assistant for Shawn Yu, FSA (Canadian actuary, CIA+SOA dual member).
 
-CIA CPD Rules (rolling 2-year window):
-- 80 total hours (Guided + Self-Study)
-- Minimum 30 Guided hours
-- Guided = live webinars with Q&A, in-person seminars, employer sessions with discussion, recorded webinars (CIA allows)
-- Self-Study = reading, e-learning, self-paced courses, books
-- Mandatory professionalism component (must have some hours marked as professionalism)
-- CIA compliance = automatic SOA compliance for dual members
-- Annual compliance statement required, records kept 5 years
+CIA rules: 80 total hrs (2-yr rolling), min 30 Guided hrs, mandatory professionalism component. Guided=live/recorded webinars w/ Q&A, seminars. Self-Study=reading, e-learning. CIA compliance = auto SOA compliance.
 
 ${ctx}
 
-Your jobs:
-1. LOG activities: extract date, description, provider, type (Guided/Self-Study), category (Technical/Professionalism/Business & Management/Other), hours, professionalism (Y/N). Ask for anything missing. When ready, end with READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided or Self-Study","category":"Technical","hours":1.0,"professionalism":"Y or N","notes":"..."}
-2. READ screenshots: if you see an image of a CPD log, conference agenda, or webinar confirmation, extract the activity details and offer to log them.
-3. CONVERT CSV: if given SOA export CSV data, parse all activities and suggest logging them.
-4. TRACK: tell Shawn exactly where he stands.
-5. FIND free CPD: suggest free SOA webcasts, CIA events, industry webinars.
-6. PACE advice: help Shawn distribute hours evenly across the 2-year window.
+Free CPD Library (already found, check before searching again):
+${libraryCache || "Empty — search and suggest the user add findings to their 'Free CPD Library' sheet tab."}
 
-Be conversational, specific, and helpful.`;
+Jobs: log activities (end with READY_TO_LOG: {json}), read screenshots/CSVs, track progress, find free CPD (check library first), give pace advice. Be concise and helpful.`;
 
   // Build message content
   let msgContent;
@@ -594,6 +616,8 @@ Be conversational, specific, and helpful.`;
   }
 
   conversationHistory.push({ role: "user", content: msgContent });
+  // Trim history to last 6 messages to save tokens on long conversations
+  const trimmedHistory = conversationHistory.slice(-6);
 
   try {
     const res = await fetch(ANTHROPIC_API, {
@@ -604,7 +628,7 @@ Be conversational, specific, and helpful.`;
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true"
       },
-      body: JSON.stringify({ model: MODEL, max_tokens: 1500, system, messages: conversationHistory })
+      body: JSON.stringify({ model: MODEL, max_tokens: 800, system, messages: trimmedHistory })
     });
 
     if (!res.ok) {
@@ -659,19 +683,23 @@ function autoResize(el) { el.style.height="auto"; el.style.height=Math.min(el.sc
 function openSettings() {
   document.getElementById("sheet-input").value = csvUrl || "";
   document.getElementById("key-input").value   = apiKey || "";
+  document.getElementById("library-input").value = localStorage.getItem("cpd_library_csv_url") || "";
   document.getElementById("setup-modal").style.display = "flex";
 }
 
 function setupAndStart() {
   const csv = document.getElementById("sheet-input").value.trim();
   const key = document.getElementById("key-input").value.trim();
+  const lib = document.getElementById("library-input").value.trim();
   if (!key||!key.startsWith("sk-ant-")) { alert("Please enter a valid Anthropic API key (starts with sk-ant-)"); return; }
   csvUrl = csv || DEFAULT_CSV;
   apiKey = key;
   localStorage.setItem("cpd_csv_url", csvUrl);
   localStorage.setItem("cpd_api_key", apiKey);
+  if (lib) localStorage.setItem("cpd_library_csv_url", lib);
   document.getElementById("setup-modal").style.display = "none";
   loadDashboard();
+  loadLibrary();
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -680,6 +708,7 @@ window.onload = () => {
   if (apiKey && csvUrl) {
     document.getElementById("setup-modal").style.display = "none";
     loadDashboard();
+    loadLibrary();
     addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\nWhat would you like to do?`);
   }
 };
