@@ -69,6 +69,14 @@ header h1 { font-size: 15px; font-weight: 600; }
 .log-card { margin-top: 10px; background: var(--teal-lt); border: 1px solid #9FE1CB; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
 .log-card .lc-row { display: flex; justify-content: space-between; padding: 2px 0; }
 .log-card .lc-label { color: var(--gray-600); font-size: 12px; }
+.bubble p { margin-bottom: 6px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble ul, .bubble ol { padding-left: 18px; margin-bottom: 6px; }
+.bubble li { margin-bottom: 2px; }
+.bubble strong { font-weight: 600; }
+.bubble h2, .bubble h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
+.bubble hr { border: none; border-top: 1px solid var(--gray-200); margin: 8px 0; }
+.bubble code { background: var(--gray-100); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 .typing { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
 .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -472,6 +480,30 @@ function clearImage() {
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g,"<em>$1</em>")
+    .replace(/^### (.+)$/gm,"<h3>$1</h3>")
+    .replace(/^## (.+)$/gm,"<h2>$1</h2>")
+    .replace(/^# (.+)$/gm,"<h1>$1</h1>")
+    .replace(/^---+$/gm,"<hr>")
+    .replace(/^\| (.+) \|$/gm, (match) => {
+      const cells = match.split("|").filter(c=>c.trim()&&!c.match(/^[-| ]+$/));
+      return "<tr>" + cells.map(c=>`<td>${c.trim()}</td>`).join("") + "</tr>";
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/gs, m => `<table>${m}</table>`)
+    .replace(/^- (.+)$/gm,"<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/gs, m => `<ul>${m}</ul>`)
+    .replace(/^\d+\. (.+)$/gm,"<li>$1</li>")
+    .replace(/\n{2,}/g,"</p><p>")
+    .replace(/\n/g,"<br>")
+    .replace(/^(.+)$/s, "<p>$1</p>")
+    .replace(/<p><(h[123]|ul|ol|table|hr)/g,"<$1")
+    .replace(/<\/(h[123]|ul|ol|table|hr)><\/p>/g,"</$1>");
+}
+
 function addMessage(role, content, logCard) {
   const msgs = document.getElementById("messages");
   const div  = document.createElement("div");
@@ -481,7 +513,11 @@ function addMessage(role, content, logCard) {
   avatar.textContent = role === "agent" ? "AI" : "SY";
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.innerHTML = content.replace(/\n/g,"<br>");
+  if (role === "agent") {
+    bubble.innerHTML = renderMarkdown(content);
+  } else {
+    bubble.innerHTML = content.replace(/\n/g,"<br>");
+  }
   if (logCard) { const c = document.createElement("div"); c.className="log-card"; c.innerHTML=logCard; bubble.appendChild(c); }
   div.appendChild(avatar); div.appendChild(bubble);
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
