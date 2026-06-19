@@ -140,6 +140,9 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
     <span class="credit">Built by Shawn Yu, FSA</span>
   </div>
 </header>
+<div style="background:var(--amber-lt);color:#92400E;font-size:11px;text-align:center;padding:5px 12px;border-bottom:1px solid #FAC775;">
+  ⚠️ Experimental tool — may contain bugs or errors. You are responsible for verifying your own CIA/SOA compliance before relying on this for official reporting.
+</div>
 
 <div class="app">
   <!-- Dashboard -->
@@ -519,6 +522,9 @@ function renderMarkdown(text) {
 
     const trimmed = line.trim();
 
+    // Skip pure separator rows like |---|---|
+    if (/^\|?[\s:|-]+\|?$/.test(trimmed) && trimmed.includes("-")) { continue; }
+
     // Table row (has pipes, not a separator)
     if (/^\|.*\|$/.test(trimmed) && !/^[\s|:-]*$/.test(trimmed)) {
       const cells = trimmed.split("|").map(c=>c.trim()).filter((c,i,arr)=> i>0 && i<arr.length-1 || (c!==""));
@@ -709,7 +715,7 @@ window.onload = () => {
     document.getElementById("setup-modal").style.display = "none";
     loadDashboard();
     loadLibrary();
-    addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\nWhat would you like to do?`);
+    addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\n⚠️ **Disclaimer:** This is an experimental tool that may contain bugs or make classification mistakes. You are responsible for verifying your own CPD compliance with the CIA/SOA. Always double-check entries before relying on them for your official compliance statement.\n\nWhat would you like to do?`);
   }
 };
 </script>
