@@ -126,7 +126,6 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
 .img-preview img { max-height: 80px; border-radius: 6px; border: 1px solid var(--gray-200); }
 .img-preview .remove { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: white; border: none; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
@@ -481,6 +480,30 @@ function clearImage() {
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g,"<em>$1</em>")
+    .replace(/^### (.+)$/gm,"<h3>$1</h3>")
+    .replace(/^## (.+)$/gm,"<h2>$1</h2>")
+    .replace(/^# (.+)$/gm,"<h1>$1</h1>")
+    .replace(/^---+$/gm,"<hr>")
+    .replace(/^\| (.+) \|$/gm, (match) => {
+      const cells = match.split("|").filter(c=>c.trim()&&!c.match(/^[-| ]+$/));
+      return "<tr>" + cells.map(c=>`<td>${c.trim()}</td>`).join("") + "</tr>";
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/gs, m => `<table>${m}</table>`)
+    .replace(/^- (.+)$/gm,"<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/gs, m => `<ul>${m}</ul>`)
+    .replace(/^\d+\. (.+)$/gm,"<li>$1</li>")
+    .replace(/\n{2,}/g,"</p><p>")
+    .replace(/\n/g,"<br>")
+    .replace(/^(.+)$/s, "<p>$1</p>")
+    .replace(/<p><(h[123]|ul|ol|table|hr)/g,"<$1")
+    .replace(/<\/(h[123]|ul|ol|table|hr)><\/p>/g,"</$1>");
+}
+
 function addMessage(role, content, logCard) {
   const msgs = document.getElementById("messages");
   const div  = document.createElement("div");
@@ -490,9 +513,8 @@ function addMessage(role, content, logCard) {
   avatar.textContent = role === "agent" ? "AI" : "SY";
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  // Render markdown for agent messages, plain text for user
   if (role === "agent") {
-    bubble.innerHTML = marked.parse(content);
+    bubble.innerHTML = renderMarkdown(content);
   } else {
     bubble.innerHTML = content.replace(/\n/g,"<br>");
   }
