@@ -23,11 +23,16 @@ Tired of manually tracking your CPD hours? This AI-powered agent helps you log a
 
 ---
 
-## How Logging Actually Works (Important)
+## How Logging Actually Works
 
-The agent **cannot write directly to your Google Sheet**. Reading your sheet (for the dashboard) uses a public read-only CSV link, but writing requires deeper Google API setup that this version doesn't include yet.
+By default, the agent **cannot write directly to your Google Sheet** — reading your sheet (for the dashboard) uses a public read-only CSV link, but writing requires a small extra step.
 
-When you log an activity, the agent prepares a formatted entry and shows you a card — **you then manually copy that row into your Google Sheet.** It takes about 10 seconds per activity. Until a future version adds real write access, this manual step is part of the workflow.
+When you log an activity, the agent prepares a formatted entry and shows you a card. From there you have two options:
+
+- **Manual (default, zero setup):** copy the row into your Google Sheet yourself — takes about 10 seconds
+- **Automatic (optional, one-time 5 min setup):** enable direct writing via Google Apps Script — see the **"Optional: Enable Direct Sheet Writing"** section below — and you'll get a one-click **"Add to Sheet"** button instead
+
+Both work fine. Pick whichever you prefer.
 
 ---
 
@@ -89,6 +94,91 @@ You'll end up with two separate CSV URLs — one for your log, one for the share
 1. Go to **[https://wlgccycc.github.io/SOA-CPD-AGENT](https://wlgccycc.github.io/SOA-CPD-AGENT)**
 2. Paste your **CPD Log CSV URL**, your **Free CPD Library CSV URL** (optional), and your **API key**
 3. Click **Connect & Start**
+
+---
+
+## Optional: Enable Direct Sheet Writing
+
+By default, when the agent logs an activity it shows you a card with all the details — you then **manually copy that row** into your Google Sheet. This works fine and requires zero extra setup.
+
+If you'd rather have the agent **write directly into your sheet** with one click, you can enable this with a one-time, 5-minute setup using Google Apps Script. This is entirely optional — skip it if the manual copy-paste is good enough for you.
+
+### How to set it up
+
+1. Open your Google Sheet (the real Google Sheets version, not an Excel file viewed in Google Drive — check there's no ".XLSX" tag next to the filename)
+2. Click **Extensions → Apps Script** in the menu bar
+   - If you don't see "Extensions," your file might still be in Excel format. Use **File → Save as Google Sheets** first to convert it.
+3. Delete any starter code in the editor, and paste this in:
+
+```javascript
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CPD Log");
+
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "Could not find 'CPD Log' sheet"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var lastRow = sheet.getLastRow();
+    var targetRow = lastRow + 1;
+
+    sheet.getRange(targetRow, 1, 1, 10).setValues([[
+      data.date || "",
+      data.description || "",
+      data.provider || "",
+      data.type || "",
+      data.category || "Technical",
+      parseFloat(data.hours) || 0,
+      data.professionalism || "N",
+      "Y",
+      data.notes || "",
+      "Y"
+    ]]);
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      row: targetRow
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "CPD Agent write endpoint is live"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+4. Save the project (Ctrl+S), give it any name
+5. Click **Deploy → New deployment**
+6. Click the gear icon ⚙️ → select **Web app**
+7. Set:
+   - **Execute as**: Me
+   - **Who has access**: Anyone
+8. Click **Deploy**
+9. Click **Authorize access**, choose your Google account, click **Advanced** if warned, then **Go to [project] (unsafe)** → **Allow**
+   > This warning is normal — it's standard for any new Apps Script project, including ones you write yourself.
+10. Copy the **Web app URL** it gives you (ends in `/exec`)
+
+### Connect it to the agent
+
+1. Open the CPD Agent → click **⚙️ Settings**
+2. Paste the URL into **"Write Endpoint URL (Apps Script)"**
+3. Save
+
+Now when you log an activity, you'll see a green **"✓ Add to Sheet"** button instead of just instructions — click it and the row is written directly into your sheet, with the dashboard refreshing automatically.
+
+> ⚠️ Each person needs to do this setup on **their own** Google Sheet — the write endpoint is tied to whichever sheet it was deployed from. This is a one-time, ~5 minute task per person, and entirely optional.
 
 ---
 
