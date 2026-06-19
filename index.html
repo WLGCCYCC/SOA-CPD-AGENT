@@ -218,9 +218,9 @@ async function loadDashboard() {
 
     let total = 0, guided = 0, selfStudy = 0, count = 0;
     rows.forEach(r => {
-      // Hours is column F (index 5), Type is column D (index 3)
-      const hrs = parseFloat(Object.values(r)[5] || 0);
-      const type = (Object.values(r)[3] || "").toLowerCase();
+      // Try named columns first, fall back to index
+      const hrs = parseFloat(r["Hours"] || r["hours"] || Object.values(r)[5] || 0);
+      const type = (r["Type"] || r["Type\n(Guided / Self-Study)"] || Object.values(r)[3] || "").toLowerCase();
       if (!isNaN(hrs) && hrs > 0) {
         total += hrs;
         count++;
@@ -243,13 +243,18 @@ async function loadDashboard() {
 function parseCSV(text) {
   const lines = text.trim().split("\n");
   if (lines.length < 2) return [];
-  const headers = splitCSVLine(lines[0]);
-  return lines.slice(1).map(line => {
+  // Skip title row if first cell looks like a title (not a date or "Date")
+  let headerIdx = 0;
+  const firstCell = splitCSVLine(lines[0])[0].replace(/"/g,"").trim();
+  if (!firstCell.match(/^(Date|\d{4})/i)) headerIdx = 1;
+  if (lines.length <= headerIdx + 1) return [];
+  const headers = splitCSVLine(lines[headerIdx]);
+  return lines.slice(headerIdx + 1).map(line => {
     const vals = splitCSVLine(line);
     const obj = {};
     headers.forEach((h, i) => { obj[h] = (vals[i] || "").trim(); });
     return obj;
-  });
+  }).filter(r => Object.values(r).some(v => v));
 }
 
 function splitCSVLine(line) {
