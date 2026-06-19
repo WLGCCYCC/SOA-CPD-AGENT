@@ -262,7 +262,7 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
 <script>
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
-const DEFAULT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
+const DEFAULT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXOkcz4_fJJRUhU8KV86Uafkt-XKHCkcmUmHLwy30q4vxxL5oqusARUrj6j3HYIhXbxeDEA50tFLfm/pub?gid=452697452&single=true&output=csv";
 const DEFAULT_SHEET_ID = "1IeyR6GX6LsEfsDpwXbemI0NtsRm7iwud";
 
 let apiKey  = localStorage.getItem("cpd_api_key") || "";
@@ -304,12 +304,31 @@ function splitCSVLine(line) {
   return result;
 }
 
+function splitCSVRespectingQuotes(text) {
+  // Split into logical lines, respecting quoted fields that may contain literal newlines
+  const lines = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') inQ = !inQ;
+    if ((ch === '\n' || ch === '\r') && !inQ) {
+      if (ch === '\r' && text[i+1] === '\n') continue; // skip \r in \r\n pairs, \n will trigger push
+      if (cur.trim()) lines.push(cur);
+      cur = "";
+    } else if (ch !== '\r') {
+      cur += ch;
+    }
+  }
+  if (cur.trim()) lines.push(cur);
+  return lines;
+}
+
 async function loadDashboard() {
   try {
     const res = await fetch(csvUrl);
     if (!res.ok) throw new Error("Sheet not accessible");
     const text = await res.text();
-    const lines = text.split("\n");
+    const lines = splitCSVRespectingQuotes(text);
     const dateRe = /^"?\d{4}-\d{2}-\d{2}/;
 
     let total=0, guided=0, selfStudy=0, count=0, profHrs=0;
