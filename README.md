@@ -1,163 +1,666 @@
-# ⚖️ CPD Agent — CIA & SOA Continuing Professional Development Tracker
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPD Agent — Shawn Yu</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #1B3A6B; --teal: #1D9E75; --teal-lt: #E1F5EE;
+  --amber: #F59E0B; --amber-lt: #FAEEDA;
+  --red: #DC2626; --red-lt: #FEE2E2;
+  --gray-100: #F1F5F9; --gray-200: #E2E8F0;
+  --gray-400: #94A3B8; --gray-600: #475569; --gray-800: #1E293B;
+  --white: #FFFFFF; --radius: 10px;
+  --font: 'Inter', system-ui, sans-serif;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+body { font-family: var(--font); background: var(--gray-100); color: var(--gray-800); min-height: 100vh; display: flex; flex-direction: column; }
 
-**Built by Shawn Yu, FSA — for actuaries, by an actuary.**
+header { background: var(--navy); color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+header h1 { font-size: 15px; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.hdr-btn { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-family: var(--font); transition: background 0.15s; }
+.hdr-btn:hover { background: rgba(255,255,255,0.2); }
+.credit { font-size: 11px; opacity: 0.45; }
 
-Tired of manually tracking your CPD hours? This AI-powered agent helps you log activities, track your progress toward CIA and SOA requirements, and find free guided CPD — all in one place.
+.app { display: flex; flex: 1; height: calc(100vh - 50px); overflow: hidden; }
 
-> 🇨🇦 Designed for Canadian actuaries who are dual members of the **CIA** and **SOA**. Meeting the CIA requirement automatically satisfies the SOA requirement.
+/* ── Dashboard ── */
+.dashboard { width: 280px; flex-shrink: 0; background: var(--white); border-right: 1px solid var(--gray-200); overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+.dash-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-400); padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); }
+.metric-card { background: var(--gray-100); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.metric-card .label { font-size: 10px; color: var(--gray-600); }
+.metric-card .value { font-size: 20px; font-weight: 600; color: var(--gray-800); }
+.metric-card .sub { font-size: 10px; color: var(--gray-400); }
+.progress-bar-bg { height: 5px; background: var(--gray-200); border-radius: 99px; overflow: hidden; margin-top: 5px; }
+.progress-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s ease; }
+.progress-bar-fill.warn { background: var(--amber); }
+.progress-bar-fill.danger { background: var(--red); }
+.status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; margin-top: 4px; }
+.status-badge.ok     { background: var(--teal-lt); color: #0F6E56; }
+.status-badge.warn   { background: var(--amber-lt); color: #92400E; }
+.status-badge.danger { background: var(--red-lt); color: var(--red); }
 
----
+/* Pace chart */
+.pace-wrap { display: flex; gap: 6px; margin-top: 6px; }
+.pace-bar-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.pace-yr-label { font-size: 10px; color: var(--gray-600); }
+.pace-bar-bg { height: 8px; background: var(--gray-200); border-radius: 99px; overflow: hidden; }
+.pace-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); }
+.pace-bar-fill.warn { background: var(--amber); }
+.pace-val { font-size: 10px; color: var(--gray-600); text-align: right; }
 
-## What It Does
+.sheet-link { font-size: 11px; color: var(--teal); text-decoration: none; display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--gray-200); }
+.sheet-link:hover { text-decoration: underline; }
 
-- 📊 **Live dashboard** — see your total, guided, and self-study hours at a glance
-- 🧘 **Professionalism tracking** — know if you've met the mandatory professionalism requirement
-- 📅 **Pace tracking** — see how your hours are spread across the rolling 2-year window
-- 🤖 **AI chat agent** — describe what you did and it logs it for you
-- 🎤 **Voice input** — speak your activity instead of typing
-- 📸 **Screenshot upload** — photo a webinar confirmation, the agent reads it
-- 📄 **CSV import** — drop in your SOA tracker export and it converts automatically
-- 🔍 **Find free CPD** — ask the agent to find free guided activities online
+/* ── Chat ── */
+.chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.msg { display: flex; gap: 8px; max-width: 700px; }
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+.avatar.agent { background: var(--navy); color: white; }
+.avatar.user  { background: var(--teal); color: white; }
+.bubble { padding: 10px 13px; border-radius: 14px; font-size: 14px; line-height: 1.6; max-width: 540px; }
+.msg.agent .bubble { background: var(--white); border: 1px solid var(--gray-200); border-top-left-radius: 4px; }
+.msg.user .bubble  { background: var(--navy); color: white; border-top-right-radius: 4px; }
+.log-card { margin-top: 10px; background: var(--teal-lt); border: 1px solid #9FE1CB; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.log-card .lc-row { display: flex; justify-content: space-between; padding: 2px 0; }
+.log-card .lc-label { color: var(--gray-600); font-size: 12px; }
+.bubble p { margin-bottom: 6px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble ul, .bubble ol { padding-left: 18px; margin-bottom: 6px; }
+.bubble li { margin-bottom: 2px; }
+.bubble strong { font-weight: 600; }
+.bubble h2, .bubble h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
+.bubble hr { border: none; border-top: 1px solid var(--gray-200); margin: 8px 0; }
+.bubble code { background: var(--gray-100); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.typing { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
 
----
+/* ── Input area ── */
+.input-area { padding: 12px 20px; background: var(--white); border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 8px; }
+.quick-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.quick-btn { font-size: 12px; padding: 4px 11px; border-radius: 99px; border: 1px solid var(--gray-200); background: var(--gray-100); color: var(--gray-600); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+.quick-btn:hover { background: var(--teal-lt); border-color: var(--teal); color: var(--teal); }
 
-## Setup Guide (Step by Step)
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+textarea { flex: 1; resize: none; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 9px 13px; font-size: 14px; font-family: var(--font); color: var(--gray-800); outline: none; line-height: 1.5; max-height: 100px; overflow-y: auto; transition: border-color 0.15s; }
+textarea:focus { border-color: var(--teal); }
+textarea.listening { border-color: var(--red); background: var(--red-lt); }
 
-### Step 1 — Download the Excel Template
+.input-btn { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: all 0.15s; }
+.send-btn { background: var(--navy); color: white; }
+.send-btn:hover { background: var(--teal); }
+.send-btn:disabled { background: var(--gray-200); cursor: not-allowed; }
+.mic-btn  { background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-600); }
+.mic-btn:hover { background: var(--red-lt); border-color: var(--red); color: var(--red); }
+.mic-btn.active { background: var(--red); color: white; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.upload-btn { background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-600); }
+.upload-btn:hover { background: var(--teal-lt); border-color: var(--teal); color: var(--teal); }
 
-Download the file **`CPD_Tracker_Template.xlsx`** from this repo (click it, then click the download button).
+#file-input { display: none; }
+.footer-note { font-size: 11px; color: var(--gray-400); text-align: center; }
 
-This is your personal CPD log. All your data lives here — the agent reads and writes to it.
+/* ── Modal ── */
+.modal-bg { position: fixed; inset: 0; background: rgba(15,30,60,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: white; border-radius: 16px; padding: 28px; width: 480px; max-width: 92vw; display: flex; flex-direction: column; gap: 14px; }
+.modal h2 { font-size: 17px; font-weight: 600; color: var(--navy); }
+.modal p  { font-size: 13px; color: var(--gray-600); line-height: 1.7; }
+.modal label { font-size: 12px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px; }
+.modal input { width: 100%; padding: 9px 13px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; font-family: var(--font); outline: none; color: var(--gray-800); }
+.modal input:focus { border-color: var(--teal); }
+.modal-btn { padding: 10px 20px; background: var(--navy); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: background 0.15s; }
+.modal-btn:hover { background: var(--teal); }
+.modal-note { font-size: 11px; color: var(--gray-400); }
+hr { border: none; border-top: 1px solid var(--gray-200); }
 
----
+/* Image preview */
+.img-preview { position: relative; margin-bottom: 4px; }
+.img-preview img { max-height: 80px; border-radius: 6px; border: 1px solid var(--gray-200); }
+.img-preview .remove { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: white; border: none; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
 
-### Step 2 — Upload to Google Sheets
+<header>
+  <h1>⚖️ CPD Agent</h1>
+  <span style="font-size:12px;opacity:0.6;">CIA &amp; SOA Continuing Professional Development Tracker</span>
+  <div class="header-right">
+    <button class="hdr-btn" onclick="openSettings()">⚙️ Settings</button>
+    <span class="credit">Built by Shawn Yu, FSA</span>
+  </div>
+</header>
 
-1. Go to **[Google Drive](https://drive.google.com)** and sign in
-2. Click **New → File upload**
-3. Upload the `CPD_Tracker_Template.xlsx` file you just downloaded
-4. Once uploaded, right-click the file → **Open with → Google Sheets**
-5. Google Sheets will convert it automatically
+<div class="app">
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="dash-title">Your CPD Progress</div>
 
-> Your spreadsheet has 3 tabs: **CPD Log** (your activities), **Dashboard** (auto-calculated summary), and **CPD Rules Reference** (quick cheat sheet of what qualifies).
+    <div class="metric-card">
+      <div class="label">Total Hours (2-yr rolling)</div>
+      <div class="value" id="val-total">—</div>
+      <div style="display:flex;justify-content:space-between;margin-top:1px;">
+        <span class="sub" id="pct-total"></span>
+        <span class="sub">min 80 hrs</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-total" style="width:0%"></div></div>
+    </div>
 
----
+    <div class="metric-card">
+      <div class="label">Guided CPD Hours</div>
+      <div class="value" id="val-guided">—</div>
+      <div style="display:flex;justify-content:space-between;margin-top:1px;">
+        <span class="sub" id="pct-guided"></span>
+        <span class="sub">min 30 hrs</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-guided" style="width:0%"></div></div>
+    </div>
 
-### Step 3 — Publish Your Sheet (Required for the Dashboard)
+    <div class="metric-card">
+      <div class="label">Self-Study Hours</div>
+      <div class="value" id="val-self">—</div>
+      <div class="sub">No minimum required</div>
+    </div>
 
-The agent needs to read your sheet. Here's how to make that possible:
+    <!-- Professionalism card -->
+    <div class="metric-card">
+      <div class="label">Professionalism Module</div>
+      <div style="margin-top:4px;" id="prof-status"><span class="status-badge warn">⏳ Loading...</span></div>
+      <div class="sub" id="prof-hrs" style="margin-top:3px;"></div>
+    </div>
 
-1. In Google Sheets, click **File** in the top menu
-2. Click **Share** → **Publish to web**
-3. In the first dropdown, select **"CPD Log"** (not "Entire Document")
-4. In the second dropdown, select **"Comma-separated values (.csv)"**
-5. Click **Publish** → click **OK** when it asks you to confirm
-6. Copy the URL it gives you — it looks like this:
-   ```
-   https://docs.google.com/spreadsheets/d/e/LONG-ID-HERE/pub?gid=...&output=csv
-   ```
-7. Save this URL — you'll need it in Step 5
+    <!-- Pace tracking card -->
+    <div class="metric-card">
+      <div class="label">Pace by Year</div>
+      <div class="sub" style="margin-top:2px;">Rolling 2-year breakdown</div>
+      <div class="pace-wrap" id="pace-wrap" style="margin-top:6px;">
+        <div style="font-size:11px;color:var(--gray-400);">Loading...</div>
+      </div>
+      <div class="sub" id="pace-advice" style="margin-top:6px;color:var(--amber);font-size:10px;"></div>
+    </div>
 
-> ⚠️ This makes your CPD data publicly readable by anyone with the link. Since it only contains activity names and hours (no personal financial data), this is generally low risk. If you prefer privacy, you can skip the dashboard and use the agent for chat only.
+    <div class="metric-card">
+      <div class="label">CIA Compliance</div>
+      <div id="cia-status"><span class="status-badge warn">⏳ Loading...</span></div>
+    </div>
 
----
+    <div class="metric-card">
+      <div class="label">SOA Compliance</div>
+      <div id="soa-status"><span class="status-badge warn">⏳ Loading...</span></div>
+    </div>
 
-### Step 4 — Get an Anthropic API Key
+    <div class="metric-card">
+      <div class="label">Activities Logged</div>
+      <div class="value" id="val-count">—</div>
+    </div>
 
-The AI chat uses Claude (by Anthropic). You need your own API key — it costs a few cents per month for typical usage.
+    <a class="sheet-link" id="sheet-link" href="#" target="_blank">📊 Open Google Sheet →</a>
+  </div>
 
-1. Go to **[platform.anthropic.com](https://platform.anthropic.com)**
-2. Sign up for a free account
-3. Click **API Keys** in the left menu
-4. Click **Create Key** — give it any name
-5. Copy the key (starts with `sk-ant-api03-...`)
+  <!-- Chat -->
+  <div class="chat-panel">
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickSend('How am I doing on my CPD this year?')">📊 Check progress</button>
+        <button class="quick-btn" onclick="quickSend('I want to log a new CPD activity')">➕ Log activity</button>
+        <button class="quick-btn" onclick="quickSend('What do I still need to be compliant?')">✅ What do I need?</button>
+        <button class="quick-btn" onclick="quickSend('Find me free guided CPD activities online')">🔍 Find free CPD</button>
+      </div>
+      <div id="img-preview-wrap"></div>
+      <div class="input-row">
+        <button class="input-btn mic-btn" id="mic-btn" onclick="toggleVoice()" title="Voice input">🎤</button>
+        <button class="input-btn upload-btn" onclick="document.getElementById('file-input').click()" title="Upload screenshot or CSV">📎</button>
+        <input type="file" id="file-input" accept="image/*,.csv,.xlsx" onchange="handleFileUpload(event)">
+        <textarea id="user-input" rows="1" placeholder="Type, speak, or upload a screenshot / CSV..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="input-btn send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+      </div>
+      <div class="footer-note">Built by Shawn Yu, FSA &nbsp;·&nbsp; CIA &amp; SOA CPD Agent v4.0 &nbsp;·&nbsp; Voice · Screenshot · CSV supported</div>
+    </div>
+  </div>
+</div>
 
-> ⚠️ Keep your API key private. Never share it publicly or paste it in a chat. The agent stores it only in your browser's local storage — it never leaves your device.
+<!-- Setup Modal -->
+<div class="modal-bg" id="setup-modal">
+  <div class="modal">
+    <h2>⚖️ CPD Agent Setup</h2>
+    <p>Connect your Google Sheet and Anthropic API key. Both stored only on your device.</p>
+    <hr>
+    <div>
+      <label>Google Sheet — Published CSV URL</label>
+      <input type="text" id="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?...output=csv" />
+      <p style="font-size:11px;color:#94A3B8;margin-top:4px;">File → Share → Publish to web → CPD Log sheet → CSV format</p>
+    </div>
+    <div>
+      <label>Anthropic API Key</label>
+      <input type="password" id="key-input" placeholder="sk-ant-api03-..." />
+      <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Get yours at platform.anthropic.com · Stored locally only, never shared</p>
+    </div>
+    <button class="modal-btn" onclick="setupAndStart()">Connect & Start →</button>
+    <p class="modal-note">Built by Shawn Yu, FSA — for actuaries, by an actuary.</p>
+  </div>
+</div>
 
----
+<script>
+const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-6";
+const DEFAULT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
+const DEFAULT_SHEET_ID = "1IeyR6GX6LsEfsDpwXbemI0NtsRm7iwud";
 
-### Step 5 — Open the Agent and Connect Everything
+let apiKey  = localStorage.getItem("cpd_api_key") || "";
+let csvUrl  = localStorage.getItem("cpd_csv_url") || DEFAULT_CSV;
+let sheetId = localStorage.getItem("cpd_sheet_id") || DEFAULT_SHEET_ID;
+let conversationHistory = [];
+let dashboardData = { total:0, guided:0, selfStudy:0, count:0, profHrs:0, byYear:{} };
+let pendingImage = null;
+let recognition = null;
+let isListening = false;
 
-1. Go to **[https://wlgccycc.github.io/SOA-CPD-AGENT](https://wlgccycc.github.io/SOA-CPD-AGENT)**
-2. The setup screen will appear
-3. Paste your **Published CSV URL** from Step 3
-4. Paste your **Anthropic API Key** from Step 4
-5. Click **Connect & Start**
+// ── CSV / Dashboard ──────────────────────────────────────────────────────────
+function splitCSVLine(line) {
+  const result = []; let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ""; }
+    else { cur += ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
 
-Your dashboard should load with your hours automatically!
+async function loadDashboard() {
+  try {
+    const res = await fetch(csvUrl);
+    if (!res.ok) throw new Error("Sheet not accessible");
+    const text = await res.text();
+    const lines = text.split("\n");
+    const dateRe = /^"?\d{4}-\d{2}-\d{2}/;
 
----
+    let total=0, guided=0, selfStudy=0, count=0, profHrs=0;
+    const byYear = {};
+    const now = new Date();
+    const twoYearsAgo = new Date(now.getFullYear()-2, now.getMonth(), now.getDate());
 
-## How to Log a CPD Activity
+    lines.forEach(line => {
+      if (!dateRe.test(line.trim())) return;
+      const cols = splitCSVLine(line);
+      const dateStr = cols[0].replace(/"/g,"").trim();
+      const actDate = new Date(dateStr);
+      if (isNaN(actDate)) return;
+      if (actDate < twoYearsAgo) return; // outside rolling window
 
-Just describe it in plain English in the chat box. For example:
+      const hrs  = parseFloat((cols[5]||"").replace(/"/g,"") || 0);
+      const type = (cols[3]||"").replace(/"/g,"").toLowerCase();
+      const prof = (cols[6]||"").replace(/"/g,"").trim().toUpperCase();
+      if (isNaN(hrs) || hrs <= 0) return;
 
-> *"I attended a 1.5 hour SOA webinar on IFRS 17 this morning"*
+      total += hrs; count++;
+      if (type.includes("guided")) guided += hrs;
+      else selfStudy += hrs;
+      if (prof === "Y") profHrs += hrs;
 
-The agent will:
-1. Extract the details (date, hours, type, category)
-2. Ask you anything that's missing
-3. Show you a formatted log card to confirm
-4. Give you the row to add to your Google Sheet
+      const yr = actDate.getFullYear().toString();
+      byYear[yr] = (byYear[yr] || 0) + hrs;
+    });
 
-You can also click the **🎤 mic button** and just speak it out loud.
+    dashboardData = { total, guided, selfStudy, count, profHrs, byYear };
+    console.log("Dashboard loaded:", dashboardData);
+    updateDashboardUI();
+  } catch(e) {
+    console.warn("Dashboard load error:", e.message);
+    document.getElementById("cia-status").innerHTML = '<span class="status-badge warn">⚠ Share sheet publicly to load</span>';
+  }
+}
 
----
+function updateDashboardUI() {
+  const { total, guided, selfStudy, count, profHrs, byYear } = dashboardData;
 
-## How to Import from SOA Tracker
+  document.getElementById("val-total").textContent  = total.toFixed(1) + " hrs";
+  document.getElementById("val-guided").textContent = guided.toFixed(1) + " hrs";
+  document.getElementById("val-self").textContent   = selfStudy.toFixed(1) + " hrs";
+  document.getElementById("val-count").textContent  = count;
+  document.getElementById("pct-total").textContent  = total.toFixed(1) + " / 80 hrs";
+  document.getElementById("pct-guided").textContent = guided.toFixed(1) + " / 30 hrs";
 
-If you already have activities logged in the SOA CPD Tracker:
+  const totalPct  = Math.min(100,(total/80)*100);
+  const guidedPct = Math.min(100,(guided/30)*100);
 
-1. Go to **[soa.org](https://www.soa.org)** → My SOA → Professional Development → CPD Tracker
-2. Export your activities as a CSV file
-3. In the agent, click the **📎 paperclip button**
-4. Upload your CSV file
-5. The agent will convert all activities to our format automatically
+  const bt = document.getElementById("bar-total");
+  bt.style.width = totalPct+"%";
+  bt.className = "progress-bar-fill" + (totalPct<50?" danger":totalPct<100?" warn":"");
 
----
+  const bg = document.getElementById("bar-guided");
+  bg.style.width = guidedPct+"%";
+  bg.className = "progress-bar-fill" + (guidedPct<50?" danger":guidedPct<100?" warn":"");
 
-## CIA CPD Requirements (Quick Reference)
+  // Professionalism
+  const profEl = document.getElementById("prof-status");
+  const profHrsEl = document.getElementById("prof-hrs");
+  if (profHrs > 0) {
+    profEl.innerHTML = '<span class="status-badge ok">✓ Completed</span>';
+    profHrsEl.textContent = profHrs.toFixed(1) + " professionalism hrs logged";
+  } else {
+    profEl.innerHTML = '<span class="status-badge danger">⚠ Not yet completed</span>';
+    profHrsEl.textContent = "Log activities marked Y for professionalism";
+  }
 
-| Requirement | Amount |
-|---|---|
-| Total hours (2-year rolling window) | 80 hours minimum |
-| Guided CPD hours | 30 hours minimum |
-| Self-study hours | No minimum (counts toward 80) |
-| Professionalism | Mandatory component |
-| Compliance statement | Annual |
-| Record keeping | 5 years |
+  // Pace tracking
+  const years = Object.keys(byYear).sort();
+  const currentYear = new Date().getFullYear();
+  const paceWrap = document.getElementById("pace-wrap");
+  const paceAdvice = document.getElementById("pace-advice");
 
-**Guided CPD includes:** Live webinars with Q&A, in-person seminars, employer-led sessions with discussion, recorded webinars (CIA allows this)
+  if (years.length === 0) {
+    paceWrap.innerHTML = '<div style="font-size:11px;color:var(--gray-400);">No data yet</div>';
+  } else {
+    const maxHrs = Math.max(...Object.values(byYear), 40);
+    paceWrap.innerHTML = years.map(yr => {
+      const h = byYear[yr] || 0;
+      const pct = Math.min(100,(h/80)*100);
+      const isCurrentYr = parseInt(yr) === currentYear;
+      return `
+        <div class="pace-bar-wrap">
+          <div class="pace-yr-label">${yr}${isCurrentYr?" (now)":""}</div>
+          <div class="pace-bar-bg"><div class="pace-bar-fill${h<20?" warn":""}" style="width:${Math.min(100,(h/maxHrs)*100)}%"></div></div>
+          <div class="pace-val">${h.toFixed(1)} hrs</div>
+        </div>`;
+    }).join("");
 
-**Self-Study includes:** Reading, books, e-learning, self-paced courses
+    // Pace advice
+    const thisYearHrs = byYear[currentYear.toString()] || 0;
+    const lastYearHrs = byYear[(currentYear-1).toString()] || 0;
+    const monthsIntoYear = new Date().getMonth() + 1;
+    const expectedByNow = Math.round((monthsIntoYear/12)*40);
 
-**CIA compliance = automatic SOA compliance** for dual members ✓
+    if (thisYearHrs < expectedByNow * 0.5) {
+      paceAdvice.textContent = `⚠ ${currentYear} pace is behind — aim for ~${expectedByNow} hrs by now`;
+    } else if (lastYearHrs > 70 && thisYearHrs < 10) {
+      paceAdvice.textContent = `⚠ Most hours in ${currentYear-1} — spread them out this year`;
+    } else {
+      paceAdvice.textContent = `✓ Good pace — stay consistent`;
+      paceAdvice.style.color = "var(--teal)";
+    }
+  }
 
----
+  // CIA / SOA
+  const ciaMet = total >= 80 && guided >= 30;
+  document.getElementById("cia-status").innerHTML = ciaMet
+    ? '<span class="status-badge ok">✓ Compliant</span>'
+    : `<span class="status-badge ${total<40?"danger":"warn"}">⚠ Need ${Math.max(0,80-total).toFixed(1)} total + ${Math.max(0,30-guided).toFixed(1)} guided hrs</span>`;
+  document.getElementById("soa-status").innerHTML = ciaMet
+    ? '<span class="status-badge ok">✓ Compliant (via CIA)</span>'
+    : '<span class="status-badge warn">⚠ Meet CIA requirement first</span>';
 
-## Frequently Asked Questions
+  document.getElementById("sheet-link").href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+}
 
-**Does this store my data anywhere?**
-No. Your CPD data lives in your own Google Sheet. Your API key is stored only in your browser's local storage. Nothing is sent to any third-party server except Anthropic's API (for the AI chat).
+// ── Voice input ──────────────────────────────────────────────────────────────
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    addMessage("agent", "Voice input isn't supported in this browser. Try Chrome or Edge!");
+    return;
+  }
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
 
-**How much does the API cost?**
-Typical usage (logging a few activities, checking progress) costs less than $1/month. Each chat message costs a fraction of a cent.
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById("mic-btn").classList.add("active");
+    document.getElementById("user-input").placeholder = "Listening...";
+    document.getElementById("user-input").classList.add("listening");
+  };
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
+    document.getElementById("user-input").value = transcript;
+    autoResize(document.getElementById("user-input"));
+  };
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById("mic-btn").classList.remove("active");
+    document.getElementById("user-input").placeholder = "Type, speak, or upload a screenshot / CSV...";
+    document.getElementById("user-input").classList.remove("listening");
+  };
+  recognition.onerror = (e) => {
+    isListening = false;
+    document.getElementById("mic-btn").classList.remove("active");
+    document.getElementById("user-input").classList.remove("listening");
+  };
+  recognition.start();
+}
 
-**Can I use this if I'm only an SOA member (not CIA)?**
-The dashboard is built around CIA rules. SOA-only members have different requirements — the agent can still help you track, but the compliance calculation may not be accurate for your situation.
+// ── File / Screenshot upload ─────────────────────────────────────────────────
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
 
-**What if my hours show as zero?**
-Make sure your Google Sheet is published correctly (Step 3). The published CSV URL must point to the "CPD Log" sheet specifically, not the entire document.
+  if (file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      pendingImage = { base64: ev.target.result.split(",")[1], mediaType: file.type };
+      const wrap = document.getElementById("img-preview-wrap");
+      wrap.innerHTML = `
+        <div class="img-preview">
+          <img src="${ev.target.result}" alt="preview">
+          <button class="remove" onclick="clearImage()">✕</button>
+        </div>`;
+      document.getElementById("user-input").placeholder = "Describe what to do with this image, or just hit send...";
+    };
+    reader.readAsDataURL(file);
+  } else if (file.name.endsWith(".csv") || file.name.endsWith(".xlsx")) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      document.getElementById("user-input").value = `I'm uploading my SOA CPD export CSV. Please convert all activities to our log format:\n\n${text.slice(0,3000)}`;
+      autoResize(document.getElementById("user-input"));
+    };
+    reader.readAsText(file);
+  }
+  e.target.value = "";
+}
 
-**Can multiple people use this?**
-Yes! Each person sets up their own Google Sheet and connects their own API key. Everyone's data stays separate.
+function clearImage() {
+  pendingImage = null;
+  document.getElementById("img-preview-wrap").innerHTML = "";
+  document.getElementById("user-input").placeholder = "Type, speak, or upload a screenshot / CSV...";
+}
 
----
+// ── Chat ─────────────────────────────────────────────────────────────────────
+function addMessage(role, content, logCard) {
+  const msgs = document.getElementById("messages");
+  const div  = document.createElement("div");
+  div.className = `msg ${role}`;
+  const avatar = document.createElement("div");
+  avatar.className = `avatar ${role}`;
+  avatar.textContent = role === "agent" ? "AI" : "SY";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  // Render markdown for agent messages, plain text for user
+  if (role === "agent") {
+    bubble.innerHTML = marked.parse(content);
+  } else {
+    bubble.innerHTML = content.replace(/\n/g,"<br>");
+  }
+  if (logCard) { const c = document.createElement("div"); c.className="log-card"; c.innerHTML=logCard; bubble.appendChild(c); }
+  div.appendChild(avatar); div.appendChild(bubble);
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
 
-## About
+function showTyping() {
+  const msgs = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className="msg agent"; div.id="typing";
+  div.innerHTML=`<div class="avatar agent">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+function removeTyping() { const t=document.getElementById("typing"); if(t) t.remove(); }
 
-This tool was built by **Shawn Yu, FSA** out of frustration with the existing CPD tracking tools — which are clunky, expensive, and don't make it easy to know if you're actually on track.
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const text  = input.value.trim();
+  if (!text && !pendingImage) return;
+  if (!apiKey) { alert("Please set your API key in Settings."); return; }
 
-If you find this useful, share it with your actuarial colleagues. If you have suggestions, open an issue on this GitHub repo.
+  const displayText = text || "📸 Image uploaded";
+  input.value = ""; autoResize(input);
+  document.getElementById("send-btn").disabled = true;
 
-*For actuaries, by an actuary.*
+  addMessage("user", displayText);
+  showTyping();
+
+  const { total, guided, selfStudy, count, profHrs, byYear } = dashboardData;
+  const currentYear = new Date().getFullYear();
+
+  const ctx = `Shawn's current CPD status (rolling 2-year window):
+- Total: ${total.toFixed(1)} / 80 hrs required
+- Guided: ${guided.toFixed(1)} / 30 hrs required  
+- Self-Study: ${selfStudy.toFixed(1)} hrs
+- Professionalism: ${profHrs.toFixed(1)} hrs logged
+- Activities: ${count}
+- By year: ${JSON.stringify(byYear)}
+- CIA compliant: ${total>=80&&guided>=30?"YES":"NOT YET"}
+- Still needs: ${Math.max(0,80-total).toFixed(1)} total, ${Math.max(0,30-guided).toFixed(1)} guided`;
+
+  const system = `You are a CPD tracking assistant for Shawn Yu, FSA — a Canadian actuary and dual member of CIA and SOA.
+
+CIA CPD Rules (rolling 2-year window):
+- 80 total hours (Guided + Self-Study)
+- Minimum 30 Guided hours
+- Guided = live webinars with Q&A, in-person seminars, employer sessions with discussion, recorded webinars (CIA allows)
+- Self-Study = reading, e-learning, self-paced courses, books
+- Mandatory professionalism component (must have some hours marked as professionalism)
+- CIA compliance = automatic SOA compliance for dual members
+- Annual compliance statement required, records kept 5 years
+
+${ctx}
+
+Your jobs:
+1. LOG activities: extract date, description, provider, type (Guided/Self-Study), category (Technical/Professionalism/Business & Management/Other), hours, professionalism (Y/N). Ask for anything missing. When ready, end with READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided or Self-Study","category":"Technical","hours":1.0,"professionalism":"Y or N","notes":"..."}
+2. READ screenshots: if you see an image of a CPD log, conference agenda, or webinar confirmation, extract the activity details and offer to log them.
+3. CONVERT CSV: if given SOA export CSV data, parse all activities and suggest logging them.
+4. TRACK: tell Shawn exactly where he stands.
+5. FIND free CPD: suggest free SOA webcasts, CIA events, industry webinars.
+6. PACE advice: help Shawn distribute hours evenly across the 2-year window.
+
+Be conversational, specific, and helpful.`;
+
+  // Build message content
+  let msgContent;
+  if (pendingImage) {
+    msgContent = [
+      { type: "image", source: { type: "base64", media_type: pendingImage.mediaType, data: pendingImage.base64 }},
+      { type: "text", text: text || "Please read this image and extract any CPD activity details you can see." }
+    ];
+    clearImage();
+  } else {
+    msgContent = text;
+  }
+
+  conversationHistory.push({ role: "user", content: msgContent });
+
+  try {
+    const res = await fetch(ANTHROPIC_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({ model: MODEL, max_tokens: 1500, system, messages: conversationHistory })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    let reply = (data.content||[]).map(b=>b.text||"").join("").trim();
+    conversationHistory.push({ role:"assistant", content: reply });
+
+    let logCard = null;
+    const logMatch = reply.match(/READY_TO_LOG:\s*(\{[\s\S]*?\})/);
+    if (logMatch) {
+      try {
+        const ld = JSON.parse(logMatch[1]);
+        reply = reply.replace(/READY_TO_LOG:[\s\S]*/, "").trim();
+        logCard = `
+          <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log:</div>
+          <div class="lc-row"><span class="lc-label">Date</span><span>${ld.date}</span></div>
+          <div class="lc-row"><span class="lc-label">Activity</span><span>${ld.description}</span></div>
+          <div class="lc-row"><span class="lc-label">Provider</span><span>${ld.provider}</span></div>
+          <div class="lc-row"><span class="lc-label">Type</span><span><strong>${ld.type}</strong></span></div>
+          <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${ld.hours} hrs</strong></span></div>
+          <div class="lc-row"><span class="lc-label">Category</span><span>${ld.category}</span></div>
+          <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism==="Y"?"✓ Yes":"No"}</span></div>
+          ${ld.notes?`<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>`:""}
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
+            👉 Add this row to your <a href="https://docs.google.com/spreadsheets/d/${sheetId}/edit" target="_blank" style="color:#1D9E75;font-weight:600;">Google Sheet</a>, then click below to refresh.
+          </div>
+          <button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`;
+      } catch(e) {}
+    }
+
+    removeTyping();
+    addMessage("agent", reply, logCard);
+
+  } catch(err) {
+    removeTyping();
+    addMessage("agent", `Error: ${err.message}\n\nCheck your API key in Settings and make sure it has credits.`);
+  }
+
+  document.getElementById("send-btn").disabled = false;
+  document.getElementById("user-input").focus();
+}
+
+function quickSend(t) { document.getElementById("user-input").value=t; sendMessage(); }
+function handleKey(e) { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function autoResize(el) { el.style.height="auto"; el.style.height=Math.min(el.scrollHeight,100)+"px"; }
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById("sheet-input").value = csvUrl || "";
+  document.getElementById("key-input").value   = apiKey || "";
+  document.getElementById("setup-modal").style.display = "flex";
+}
+
+function setupAndStart() {
+  const csv = document.getElementById("sheet-input").value.trim();
+  const key = document.getElementById("key-input").value.trim();
+  if (!key||!key.startsWith("sk-ant-")) { alert("Please enter a valid Anthropic API key (starts with sk-ant-)"); return; }
+  csvUrl = csv || DEFAULT_CSV;
+  apiKey = key;
+  localStorage.setItem("cpd_csv_url", csvUrl);
+  localStorage.setItem("cpd_api_key", apiKey);
+  document.getElementById("setup-modal").style.display = "none";
+  loadDashboard();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  document.getElementById("sheet-input").value = csvUrl || "";
+  if (apiKey && csvUrl) {
+    document.getElementById("setup-modal").style.display = "none";
+    loadDashboard();
+    addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\nWhat would you like to do?`);
+  }
+};
+</script>
+</body>
+</html>
