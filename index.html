@@ -92,7 +92,10 @@ textarea:focus { border-color: var(--teal); }
 <header>
   <h1>⚖️ CPD Agent</h1>
   <span style="font-size:12px;opacity:0.6;">CIA &amp; SOA Continuing Professional Development Tracker</span>
-  <span class="credit">Built by Shawn Yu, FSA</span>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button onclick="openSettings()" style="font-size:12px;padding:5px 14px;border-radius:99px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;font-family:var(--font);">⚙️ Settings</button>
+    <span class="credit">Built by Shawn Yu, FSA</span>
+  </div>
 </header>
 
 <div class="app">
@@ -206,7 +209,8 @@ function extractSheetId(url) {
 async function loadDashboard() {
   try {
     // Publish-to-web CSV URL — works without auth if sheet is shared publicly
-    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
+    const csvUrl = localStorage.getItem("cpd_csv_url") || "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
+    const url = csvUrl;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Sheet not accessible");
     const text = await res.text();
@@ -296,6 +300,13 @@ function updateDashboardUI(total, guided, selfStudy, count) {
 }
 
 // ── Setup ────────────────────────────────────────────────────────────────────
+function openSettings() {
+  const savedCsv = localStorage.getItem("cpd_csv_url") || "";
+  document.getElementById("sheet-input").value = savedCsv || "";
+  document.getElementById("key-input").value = apiKey || "";
+  document.getElementById("setup-modal").style.display = "flex";
+}
+
 function setupAndStart() {
   const sheetVal = document.getElementById("sheet-input").value.trim();
   const keyVal   = document.getElementById("key-input").value.trim();
@@ -305,14 +316,20 @@ function setupAndStart() {
     return;
   }
 
-  sheetId = sheetVal ? extractSheetId(sheetVal) : DEFAULT_SHEET_ID;
-  apiKey  = keyVal;
+  // Store CSV URL directly if it looks like a published CSV
+  if (sheetVal.includes("/pub?") || sheetVal.includes("PACX")) {
+    localStorage.setItem("cpd_csv_url", sheetVal);
+  } else {
+    localStorage.setItem("cpd_csv_url", "");
+    sheetId = sheetVal ? extractSheetId(sheetVal) : DEFAULT_SHEET_ID;
+    localStorage.setItem("cpd_sheet_id", sheetId);
+  }
 
-  localStorage.setItem("cpd_sheet_id", sheetId);
+  apiKey = keyVal;
   localStorage.setItem("cpd_api_key", apiKey);
 
   document.getElementById("setup-modal").style.display = "none";
-  init();
+  loadDashboard();
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
@@ -476,9 +493,8 @@ async function init() {
 
 window.onload = () => {
   // Pre-fill modal with saved values
-  document.getElementById("sheet-input").value = sheetId
-    ? `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
-    : "";
+  const savedCsv = localStorage.getItem("cpd_csv_url") || "";
+  document.getElementById("sheet-input").value = savedCsv || (sheetId ? `https://docs.google.com/spreadsheets/d/${sheetId}/edit` : "");
 
   // If both are saved, skip modal
   if (sheetId && apiKey) {
