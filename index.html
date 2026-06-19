@@ -262,8 +262,8 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
 <script>
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
-const DEFAULT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXOkcz4_fJJRUhU8KV86Uafkt-XKHCkcmUmHLwy30q4vxxL5oqusARUrj6j3HYIhXbxeDEA50tFLfm/pub?gid=452697452&single=true&output=csv";
-const DEFAULT_SHEET_ID = "1IeyR6GX6LsEfsDpwXbemI0NtsRm7iwud";
+const DEFAULT_CSV = "";
+const DEFAULT_SHEET_ID = "";
 
 let apiKey  = localStorage.getItem("cpd_api_key") || "";
 let csvUrl  = localStorage.getItem("cpd_csv_url") || DEFAULT_CSV;
@@ -717,7 +717,8 @@ function setupAndStart() {
   const key = document.getElementById("key-input").value.trim();
   const lib = document.getElementById("library-input").value.trim();
   if (!key||!key.startsWith("sk-ant-")) { alert("Please enter a valid Anthropic API key (starts with sk-ant-)"); return; }
-  csvUrl = csv || DEFAULT_CSV;
+  if (!csv) { alert("Please enter your Google Sheet CSV URL."); return; }
+  csvUrl = csv;
   apiKey = key;
   localStorage.setItem("cpd_csv_url", csvUrl);
   localStorage.setItem("cpd_api_key", apiKey);
