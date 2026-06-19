@@ -208,22 +208,22 @@ function extractSheetId(url) {
 // ── Dashboard: use Google's public CSV export (no CORS issues) ───────────────
 async function loadDashboard() {
   try {
-    // Publish-to-web CSV URL — works without auth if sheet is shared publicly
     const csvUrl = localStorage.getItem("cpd_csv_url") || "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
-    const url = csvUrl;
-    const res = await fetch(url);
+    const res = await fetch(csvUrl);
     if (!res.ok) throw new Error("Sheet not accessible");
     const text = await res.text();
-    console.log("CSV first 300 chars:", text.slice(0, 300));
-    const rows = parseCSV(text);
-    console.log("Parsed rows:", rows.length, "First row:", JSON.stringify(rows[0]));
 
+    // Parse line by line, only process lines that start with a date
+    const lines = text.split("\n");
+    const dateRe = /^"?\d{4}-\d{2}-\d{2}/;
     let total = 0, guided = 0, selfStudy = 0, count = 0;
-    rows.forEach(r => {
-      // Try named columns first, fall back to index
-      const vals = Object.values(r);
-      const hrs = parseFloat(r["Hours"] || vals[5] || 0);
-      const type = (r["Type (Guided / Self-Study)"] || r["Type"] || vals[3] || "").toLowerCase();
+
+    lines.forEach(line => {
+      if (!dateRe.test(line.trim())) return;
+      const cols = splitCSVLine(line);
+      // col 3=type, col 5=hours
+      const hrs = parseFloat((cols[5] || "").replace(/"/g,"") || 0);
+      const type = (cols[3] || "").replace(/"/g,"").toLowerCase();
       if (!isNaN(hrs) && hrs > 0) {
         total += hrs;
         count++;
@@ -232,14 +232,14 @@ async function loadDashboard() {
       }
     });
 
+    console.log("Dashboard loaded:", {total, guided, selfStudy, count});
     dashboardData = { total, guided, selfStudy, count };
     updateDashboardUI(total, guided, selfStudy, count);
   } catch(e) {
     console.warn("Dashboard load error:", e.message);
-    // Show placeholder — sheet may need to be published
     document.getElementById("val-total").textContent = "—";
     document.getElementById("cia-status").innerHTML =
-      '<span class="status-badge warn">⚠ Share sheet publicly to load</span>';
+      '<span class="status-badge warn">\u26a0 Share sheet publicly to load</span>';
   }
 }
 
