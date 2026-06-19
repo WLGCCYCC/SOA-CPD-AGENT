@@ -18,73 +18,105 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 body { font-family: var(--font); background: var(--gray-100); color: var(--gray-800); min-height: 100vh; display: flex; flex-direction: column; }
 
-header { background: var(--navy); color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-header h1 { font-size: 16px; font-weight: 600; }
-header .credit { font-size: 11px; opacity: 0.5; }
+header { background: var(--navy); color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+header h1 { font-size: 15px; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.hdr-btn { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; font-family: var(--font); transition: background 0.15s; }
+.hdr-btn:hover { background: rgba(255,255,255,0.2); }
+.credit { font-size: 11px; opacity: 0.45; }
 
-.app { display: flex; flex: 1; height: calc(100vh - 52px); overflow: hidden; }
+.app { display: flex; flex: 1; height: calc(100vh - 50px); overflow: hidden; }
 
-.dashboard { width: 300px; flex-shrink: 0; background: var(--white); border-right: 1px solid var(--gray-200); overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
-.dash-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-400); padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); }
-.metric-card { background: var(--gray-100); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
-.metric-card .label { font-size: 11px; color: var(--gray-600); }
-.metric-card .value { font-size: 22px; font-weight: 600; color: var(--gray-800); }
-.metric-card .sub { font-size: 11px; color: var(--gray-400); }
-.progress-bar-bg { height: 6px; background: var(--gray-200); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+/* ── Dashboard ── */
+.dashboard { width: 280px; flex-shrink: 0; background: var(--white); border-right: 1px solid var(--gray-200); overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+.dash-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-400); padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); }
+.metric-card { background: var(--gray-100); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.metric-card .label { font-size: 10px; color: var(--gray-600); }
+.metric-card .value { font-size: 20px; font-weight: 600; color: var(--gray-800); }
+.metric-card .sub { font-size: 10px; color: var(--gray-400); }
+.progress-bar-bg { height: 5px; background: var(--gray-200); border-radius: 99px; overflow: hidden; margin-top: 5px; }
 .progress-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s ease; }
 .progress-bar-fill.warn { background: var(--amber); }
 .progress-bar-fill.danger { background: var(--red); }
-.status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 99px; }
-.status-badge.ok { background: var(--teal-lt); color: var(--teal); }
-.status-badge.warn { background: var(--amber-lt); color: #92400E; }
+.status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; margin-top: 4px; }
+.status-badge.ok     { background: var(--teal-lt); color: #0F6E56; }
+.status-badge.warn   { background: var(--amber-lt); color: #92400E; }
 .status-badge.danger { background: var(--red-lt); color: var(--red); }
+
+/* Pace chart */
+.pace-wrap { display: flex; gap: 6px; margin-top: 6px; }
+.pace-bar-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.pace-yr-label { font-size: 10px; color: var(--gray-600); }
+.pace-bar-bg { height: 8px; background: var(--gray-200); border-radius: 99px; overflow: hidden; }
+.pace-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); }
+.pace-bar-fill.warn { background: var(--amber); }
+.pace-val { font-size: 10px; color: var(--gray-600); text-align: right; }
+
 .sheet-link { font-size: 11px; color: var(--teal); text-decoration: none; display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--gray-200); }
 .sheet-link:hover { text-decoration: underline; }
 
+/* ── Chat ── */
 .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-.msg { display: flex; gap: 10px; max-width: 680px; }
+.messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.msg { display: flex; gap: 8px; max-width: 700px; }
 .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-.avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
 .avatar.agent { background: var(--navy); color: white; }
 .avatar.user  { background: var(--teal); color: white; }
-.bubble { padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.6; max-width: 520px; }
+.bubble { padding: 10px 13px; border-radius: 14px; font-size: 14px; line-height: 1.6; max-width: 540px; }
 .msg.agent .bubble { background: var(--white); border: 1px solid var(--gray-200); border-top-left-radius: 4px; }
 .msg.user .bubble  { background: var(--navy); color: white; border-top-right-radius: 4px; }
 .log-card { margin-top: 10px; background: var(--teal-lt); border: 1px solid #9FE1CB; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
-.log-card .lc-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.log-card .lc-row { display: flex; justify-content: space-between; padding: 2px 0; }
 .log-card .lc-label { color: var(--gray-600); font-size: 12px; }
-.typing { display: flex; gap: 4px; padding: 6px 0; align-items: center; }
-.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
+.typing { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
 
-.input-area { padding: 14px 24px; background: var(--white); border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 10px; }
-.quick-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-.quick-btn { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--gray-200); background: var(--gray-100); color: var(--gray-600); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+/* ── Input area ── */
+.input-area { padding: 12px 20px; background: var(--white); border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 8px; }
+.quick-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.quick-btn { font-size: 12px; padding: 4px 11px; border-radius: 99px; border: 1px solid var(--gray-200); background: var(--gray-100); color: var(--gray-600); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
 .quick-btn:hover { background: var(--teal-lt); border-color: var(--teal); color: var(--teal); }
-.input-row { display: flex; gap: 10px; align-items: flex-end; }
-textarea { flex: 1; resize: none; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 10px 14px; font-size: 14px; font-family: var(--font); color: var(--gray-800); outline: none; line-height: 1.5; max-height: 120px; overflow-y: auto; transition: border-color 0.15s; }
+
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+textarea { flex: 1; resize: none; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 9px 13px; font-size: 14px; font-family: var(--font); color: var(--gray-800); outline: none; line-height: 1.5; max-height: 100px; overflow-y: auto; transition: border-color 0.15s; }
 textarea:focus { border-color: var(--teal); }
-.send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--navy); border: none; color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+textarea.listening { border-color: var(--red); background: var(--red-lt); }
+
+.input-btn { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: all 0.15s; }
+.send-btn { background: var(--navy); color: white; }
 .send-btn:hover { background: var(--teal); }
 .send-btn:disabled { background: var(--gray-200); cursor: not-allowed; }
+.mic-btn  { background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-600); }
+.mic-btn:hover { background: var(--red-lt); border-color: var(--red); color: var(--red); }
+.mic-btn.active { background: var(--red); color: white; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.upload-btn { background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-600); }
+.upload-btn:hover { background: var(--teal-lt); border-color: var(--teal); color: var(--teal); }
+
+#file-input { display: none; }
 .footer-note { font-size: 11px; color: var(--gray-400); text-align: center; }
 
-/* Setup Modal */
+/* ── Modal ── */
 .modal-bg { position: fixed; inset: 0; background: rgba(15,30,60,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal { background: white; border-radius: 16px; padding: 32px; width: 500px; max-width: 92vw; display: flex; flex-direction: column; gap: 16px; }
-.modal h2 { font-size: 18px; font-weight: 600; color: var(--navy); }
-.modal p { font-size: 13px; color: var(--gray-600); line-height: 1.7; }
-.modal label { font-size: 12px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 5px; }
-.modal input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; font-family: var(--font); outline: none; color: var(--gray-800); }
+.modal { background: white; border-radius: 16px; padding: 28px; width: 480px; max-width: 92vw; display: flex; flex-direction: column; gap: 14px; }
+.modal h2 { font-size: 17px; font-weight: 600; color: var(--navy); }
+.modal p  { font-size: 13px; color: var(--gray-600); line-height: 1.7; }
+.modal label { font-size: 12px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px; }
+.modal input { width: 100%; padding: 9px 13px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; font-family: var(--font); outline: none; color: var(--gray-800); }
 .modal input:focus { border-color: var(--teal); }
-.modal input[type=password] { letter-spacing: 0.1em; }
-.modal-btn { padding: 11px 20px; background: var(--navy); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: background 0.15s; }
+.modal-btn { padding: 10px 20px; background: var(--navy); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: background 0.15s; }
 .modal-btn:hover { background: var(--teal); }
 .modal-note { font-size: 11px; color: var(--gray-400); }
-.divider { border: none; border-top: 1px solid var(--gray-200); }
+hr { border: none; border-top: 1px solid var(--gray-200); }
+
+/* Image preview */
+.img-preview { position: relative; margin-bottom: 4px; }
+.img-preview img { max-height: 80px; border-radius: 6px; border: 1px solid var(--gray-200); }
+.img-preview .remove { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: white; border: none; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; }
 </style>
 </head>
 <body>
@@ -92,8 +124,8 @@ textarea:focus { border-color: var(--teal); }
 <header>
   <h1>⚖️ CPD Agent</h1>
   <span style="font-size:12px;opacity:0.6;">CIA &amp; SOA Continuing Professional Development Tracker</span>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <button onclick="openSettings()" style="font-size:12px;padding:5px 14px;border-radius:99px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;cursor:pointer;font-family:var(--font);">⚙️ Settings</button>
+  <div class="header-right">
+    <button class="hdr-btn" onclick="openSettings()">⚙️ Settings</button>
     <span class="credit">Built by Shawn Yu, FSA</span>
   </div>
 </header>
@@ -106,7 +138,7 @@ textarea:focus { border-color: var(--teal); }
     <div class="metric-card">
       <div class="label">Total Hours (2-yr rolling)</div>
       <div class="value" id="val-total">—</div>
-      <div style="display:flex;justify-content:space-between;margin-top:2px;">
+      <div style="display:flex;justify-content:space-between;margin-top:1px;">
         <span class="sub" id="pct-total"></span>
         <span class="sub">min 80 hrs</span>
       </div>
@@ -116,7 +148,7 @@ textarea:focus { border-color: var(--teal); }
     <div class="metric-card">
       <div class="label">Guided CPD Hours</div>
       <div class="value" id="val-guided">—</div>
-      <div style="display:flex;justify-content:space-between;margin-top:2px;">
+      <div style="display:flex;justify-content:space-between;margin-top:1px;">
         <span class="sub" id="pct-guided"></span>
         <span class="sub">min 30 hrs</span>
       </div>
@@ -129,14 +161,31 @@ textarea:focus { border-color: var(--teal); }
       <div class="sub">No minimum required</div>
     </div>
 
+    <!-- Professionalism card -->
+    <div class="metric-card">
+      <div class="label">Professionalism Module</div>
+      <div style="margin-top:4px;" id="prof-status"><span class="status-badge warn">⏳ Loading...</span></div>
+      <div class="sub" id="prof-hrs" style="margin-top:3px;"></div>
+    </div>
+
+    <!-- Pace tracking card -->
+    <div class="metric-card">
+      <div class="label">Pace by Year</div>
+      <div class="sub" style="margin-top:2px;">Rolling 2-year breakdown</div>
+      <div class="pace-wrap" id="pace-wrap" style="margin-top:6px;">
+        <div style="font-size:11px;color:var(--gray-400);">Loading...</div>
+      </div>
+      <div class="sub" id="pace-advice" style="margin-top:6px;color:var(--amber);font-size:10px;"></div>
+    </div>
+
     <div class="metric-card">
       <div class="label">CIA Compliance</div>
-      <div style="margin-top:6px;" id="cia-status"><span class="status-badge warn">⏳ Loading...</span></div>
+      <div id="cia-status"><span class="status-badge warn">⏳ Loading...</span></div>
     </div>
 
     <div class="metric-card">
       <div class="label">SOA Compliance</div>
-      <div style="margin-top:6px;" id="soa-status"><span class="status-badge warn">⏳ Loading...</span></div>
+      <div id="soa-status"><span class="status-badge warn">⏳ Loading...</span></div>
     </div>
 
     <div class="metric-card">
@@ -152,16 +201,20 @@ textarea:focus { border-color: var(--teal); }
     <div class="messages" id="messages"></div>
     <div class="input-area">
       <div class="quick-btns">
-        <button class="quick-btn" onclick="quickSend('How am I doing on my CPD this year?')">📊 Check my progress</button>
-        <button class="quick-btn" onclick="quickSend('I just attended a 1-hour webinar today, let me describe it')">➕ Log an activity</button>
-        <button class="quick-btn" onclick="quickSend('What do I still need to be compliant?')">✅ What do I still need?</button>
+        <button class="quick-btn" onclick="quickSend('How am I doing on my CPD this year?')">📊 Check progress</button>
+        <button class="quick-btn" onclick="quickSend('I want to log a new CPD activity')">➕ Log activity</button>
+        <button class="quick-btn" onclick="quickSend('What do I still need to be compliant?')">✅ What do I need?</button>
         <button class="quick-btn" onclick="quickSend('Find me free guided CPD activities online')">🔍 Find free CPD</button>
       </div>
+      <div id="img-preview-wrap"></div>
       <div class="input-row">
-        <textarea id="user-input" rows="1" placeholder="Describe a CPD activity, or ask anything..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+        <button class="input-btn mic-btn" id="mic-btn" onclick="toggleVoice()" title="Voice input">🎤</button>
+        <button class="input-btn upload-btn" onclick="document.getElementById('file-input').click()" title="Upload screenshot or CSV">📎</button>
+        <input type="file" id="file-input" accept="image/*,.csv,.xlsx" onchange="handleFileUpload(event)">
+        <textarea id="user-input" rows="1" placeholder="Type, speak, or upload a screenshot / CSV..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="input-btn send-btn" id="send-btn" onclick="sendMessage()">↑</button>
       </div>
-      <div class="footer-note">Built by Shawn Yu, FSA &nbsp;·&nbsp; CIA &amp; SOA CPD Agent v1.0 &nbsp;·&nbsp; Your API key is stored locally only</div>
+      <div class="footer-note">Built by Shawn Yu, FSA &nbsp;·&nbsp; CIA &amp; SOA CPD Agent v4.0 &nbsp;·&nbsp; Voice · Screenshot · CSV supported</div>
     </div>
   </div>
 </div>
@@ -170,21 +223,18 @@ textarea:focus { border-color: var(--teal); }
 <div class="modal-bg" id="setup-modal">
   <div class="modal">
     <h2>⚖️ CPD Agent Setup</h2>
-    <p>Connect your Google Sheet and Anthropic API key to get started. Both are stored only on your device — nothing is sent to any server except Anthropic's API directly.</p>
-    <hr class="divider">
-
+    <p>Connect your Google Sheet and Anthropic API key. Both stored only on your device.</p>
+    <hr>
     <div>
-      <label>Google Sheet URL</label>
-      <input type="text" id="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/..." />
-      <p style="font-size:11px;color:#94A3B8;margin-top:5px;">Make sure sharing is set to "Anyone with the link can view" (or edit).</p>
+      <label>Google Sheet — Published CSV URL</label>
+      <input type="text" id="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?...output=csv" />
+      <p style="font-size:11px;color:#94A3B8;margin-top:4px;">File → Share → Publish to web → CPD Log sheet → CSV format</p>
     </div>
-
     <div>
       <label>Anthropic API Key</label>
       <input type="password" id="key-input" placeholder="sk-ant-api03-..." />
-      <p style="font-size:11px;color:#94A3B8;margin-top:5px;">Get your key at platform.anthropic.com. It's stored only in your browser's local storage.</p>
+      <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Get yours at platform.anthropic.com · Stored locally only, never shared</p>
     </div>
-
     <button class="modal-btn" onclick="setupAndStart()">Connect & Start →</button>
     <p class="modal-note">Built by Shawn Yu, FSA — for actuaries, by an actuary.</p>
   </div>
@@ -193,113 +243,150 @@ textarea:focus { border-color: var(--teal); }
 <script>
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
+const DEFAULT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
 const DEFAULT_SHEET_ID = "1IeyR6GX6LsEfsDpwXbemI0NtsRm7iwud";
 
-let sheetId = localStorage.getItem("cpd_sheet_id") || DEFAULT_SHEET_ID;
 let apiKey  = localStorage.getItem("cpd_api_key") || "";
+let csvUrl  = localStorage.getItem("cpd_csv_url") || DEFAULT_CSV;
+let sheetId = localStorage.getItem("cpd_sheet_id") || DEFAULT_SHEET_ID;
 let conversationHistory = [];
-let dashboardData = { total: 0, guided: 0, selfStudy: 0, count: 0 };
+let dashboardData = { total:0, guided:0, selfStudy:0, count:0, profHrs:0, byYear:{} };
+let pendingImage = null;
+let recognition = null;
+let isListening = false;
 
-function extractSheetId(url) {
-  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  return m ? m[1] : url.trim();
-}
-
-// ── Dashboard: use Google's public CSV export (no CORS issues) ───────────────
-async function loadDashboard() {
-  try {
-    const csvUrl = localStorage.getItem("cpd_csv_url") || "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
-    const res = await fetch(csvUrl);
-    if (!res.ok) throw new Error("Sheet not accessible");
-    const text = await res.text();
-
-    // Parse line by line, only process lines that start with a date
-    const lines = text.split("\n");
-    const dateRe = /^"?\d{4}-\d{2}-\d{2}/;
-    let total = 0, guided = 0, selfStudy = 0, count = 0;
-
-    lines.forEach(line => {
-      if (!dateRe.test(line.trim())) return;
-      const cols = splitCSVLine(line);
-      // col 3=type, col 5=hours
-      const hrs = parseFloat((cols[5] || "").replace(/"/g,"") || 0);
-      const type = (cols[3] || "").replace(/"/g,"").toLowerCase();
-      if (!isNaN(hrs) && hrs > 0) {
-        total += hrs;
-        count++;
-        if (type.includes("guided")) guided += hrs;
-        else selfStudy += hrs;
-      }
-    });
-
-    console.log("Dashboard loaded:", {total, guided, selfStudy, count});
-    dashboardData = { total, guided, selfStudy, count };
-    updateDashboardUI(total, guided, selfStudy, count);
-  } catch(e) {
-    console.warn("Dashboard load error:", e.message);
-    document.getElementById("val-total").textContent = "—";
-    document.getElementById("cia-status").innerHTML =
-      '<span class="status-badge warn">\u26a0 Share sheet publicly to load</span>';
-  }
-}
-
-function parseCSV(text) {
-  const lines = text.trim().split("\n");
-  if (lines.length < 2) return [];
-  // Skip title row if first cell looks like a title (not a date or "Date")
-  let headerIdx = 0;
-  const firstCell = splitCSVLine(lines[0])[0].replace(/"/g,"").trim();
-  if (!firstCell.match(/^(Date|\d{4})/i)) headerIdx = 1;
-  if (lines.length <= headerIdx + 1) return [];
-  const headers = splitCSVLine(lines[headerIdx]).map(h => h.replace(/\n/g," ").replace(/\r/g,"").trim());
-  return lines.slice(headerIdx + 1).map(line => {
-    const vals = splitCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (vals[i] || "").trim(); });
-    return obj;
-  }).filter(r => Object.values(r).some(v => v));
-}
-
+// ── CSV / Dashboard ──────────────────────────────────────────────────────────
 function splitCSVLine(line) {
-  const result = [];
-  let cur = "", inQuote = false;
+  const result = []; let cur = "", inQ = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-    if (ch === '"') { inQuote = !inQuote; }
-    else if (ch === ',' && !inQuote) { result.push(cur.trim()); cur = ""; }
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ""; }
     else { cur += ch; }
   }
   result.push(cur.trim());
   return result;
 }
 
-function updateDashboardUI(total, guided, selfStudy, count) {
-  document.getElementById("val-total").textContent = total.toFixed(1) + " hrs";
+async function loadDashboard() {
+  try {
+    const res = await fetch(csvUrl);
+    if (!res.ok) throw new Error("Sheet not accessible");
+    const text = await res.text();
+    const lines = text.split("\n");
+    const dateRe = /^"?\d{4}-\d{2}-\d{2}/;
+
+    let total=0, guided=0, selfStudy=0, count=0, profHrs=0;
+    const byYear = {};
+    const now = new Date();
+    const twoYearsAgo = new Date(now.getFullYear()-2, now.getMonth(), now.getDate());
+
+    lines.forEach(line => {
+      if (!dateRe.test(line.trim())) return;
+      const cols = splitCSVLine(line);
+      const dateStr = cols[0].replace(/"/g,"").trim();
+      const actDate = new Date(dateStr);
+      if (isNaN(actDate)) return;
+      if (actDate < twoYearsAgo) return; // outside rolling window
+
+      const hrs  = parseFloat((cols[5]||"").replace(/"/g,"") || 0);
+      const type = (cols[3]||"").replace(/"/g,"").toLowerCase();
+      const prof = (cols[6]||"").replace(/"/g,"").trim().toUpperCase();
+      if (isNaN(hrs) || hrs <= 0) return;
+
+      total += hrs; count++;
+      if (type.includes("guided")) guided += hrs;
+      else selfStudy += hrs;
+      if (prof === "Y") profHrs += hrs;
+
+      const yr = actDate.getFullYear().toString();
+      byYear[yr] = (byYear[yr] || 0) + hrs;
+    });
+
+    dashboardData = { total, guided, selfStudy, count, profHrs, byYear };
+    console.log("Dashboard loaded:", dashboardData);
+    updateDashboardUI();
+  } catch(e) {
+    console.warn("Dashboard load error:", e.message);
+    document.getElementById("cia-status").innerHTML = '<span class="status-badge warn">⚠ Share sheet publicly to load</span>';
+  }
+}
+
+function updateDashboardUI() {
+  const { total, guided, selfStudy, count, profHrs, byYear } = dashboardData;
+
+  document.getElementById("val-total").textContent  = total.toFixed(1) + " hrs";
   document.getElementById("val-guided").textContent = guided.toFixed(1) + " hrs";
-  document.getElementById("val-self").textContent = selfStudy.toFixed(1) + " hrs";
-  document.getElementById("val-count").textContent = count;
-
-  const totalPct  = Math.min(100, (total / 80) * 100);
-  const guidedPct = Math.min(100, (guided / 30) * 100);
-
-  const barTotal = document.getElementById("bar-total");
-  barTotal.style.width = totalPct + "%";
-  if (totalPct < 50) barTotal.classList.add("danger");
-  else if (totalPct < 100) barTotal.classList.add("warn");
-
-  const barGuided = document.getElementById("bar-guided");
-  barGuided.style.width = guidedPct + "%";
-  if (guidedPct < 50) barGuided.classList.add("danger");
-  else if (guidedPct < 100) barGuided.classList.add("warn");
-
+  document.getElementById("val-self").textContent   = selfStudy.toFixed(1) + " hrs";
+  document.getElementById("val-count").textContent  = count;
   document.getElementById("pct-total").textContent  = total.toFixed(1) + " / 80 hrs";
   document.getElementById("pct-guided").textContent = guided.toFixed(1) + " / 30 hrs";
 
+  const totalPct  = Math.min(100,(total/80)*100);
+  const guidedPct = Math.min(100,(guided/30)*100);
+
+  const bt = document.getElementById("bar-total");
+  bt.style.width = totalPct+"%";
+  bt.className = "progress-bar-fill" + (totalPct<50?" danger":totalPct<100?" warn":"");
+
+  const bg = document.getElementById("bar-guided");
+  bg.style.width = guidedPct+"%";
+  bg.className = "progress-bar-fill" + (guidedPct<50?" danger":guidedPct<100?" warn":"");
+
+  // Professionalism
+  const profEl = document.getElementById("prof-status");
+  const profHrsEl = document.getElementById("prof-hrs");
+  if (profHrs > 0) {
+    profEl.innerHTML = '<span class="status-badge ok">✓ Completed</span>';
+    profHrsEl.textContent = profHrs.toFixed(1) + " professionalism hrs logged";
+  } else {
+    profEl.innerHTML = '<span class="status-badge danger">⚠ Not yet completed</span>';
+    profHrsEl.textContent = "Log activities marked Y for professionalism";
+  }
+
+  // Pace tracking
+  const years = Object.keys(byYear).sort();
+  const currentYear = new Date().getFullYear();
+  const paceWrap = document.getElementById("pace-wrap");
+  const paceAdvice = document.getElementById("pace-advice");
+
+  if (years.length === 0) {
+    paceWrap.innerHTML = '<div style="font-size:11px;color:var(--gray-400);">No data yet</div>';
+  } else {
+    const maxHrs = Math.max(...Object.values(byYear), 40);
+    paceWrap.innerHTML = years.map(yr => {
+      const h = byYear[yr] || 0;
+      const pct = Math.min(100,(h/80)*100);
+      const isCurrentYr = parseInt(yr) === currentYear;
+      return `
+        <div class="pace-bar-wrap">
+          <div class="pace-yr-label">${yr}${isCurrentYr?" (now)":""}</div>
+          <div class="pace-bar-bg"><div class="pace-bar-fill${h<20?" warn":""}" style="width:${Math.min(100,(h/maxHrs)*100)}%"></div></div>
+          <div class="pace-val">${h.toFixed(1)} hrs</div>
+        </div>`;
+    }).join("");
+
+    // Pace advice
+    const thisYearHrs = byYear[currentYear.toString()] || 0;
+    const lastYearHrs = byYear[(currentYear-1).toString()] || 0;
+    const monthsIntoYear = new Date().getMonth() + 1;
+    const expectedByNow = Math.round((monthsIntoYear/12)*40);
+
+    if (thisYearHrs < expectedByNow * 0.5) {
+      paceAdvice.textContent = `⚠ ${currentYear} pace is behind — aim for ~${expectedByNow} hrs by now`;
+    } else if (lastYearHrs > 70 && thisYearHrs < 10) {
+      paceAdvice.textContent = `⚠ Most hours in ${currentYear-1} — spread them out this year`;
+    } else {
+      paceAdvice.textContent = `✓ Good pace — stay consistent`;
+      paceAdvice.style.color = "var(--teal)";
+    }
+  }
+
+  // CIA / SOA
   const ciaMet = total >= 80 && guided >= 30;
   document.getElementById("cia-status").innerHTML = ciaMet
     ? '<span class="status-badge ok">✓ Compliant</span>'
-    : `<span class="status-badge ${total < 40 ? 'danger' : 'warn'}">⚠ ${Math.max(0,80-total).toFixed(1)} total hrs + ${Math.max(0,30-guided).toFixed(1)} guided hrs needed</span>`;
-
+    : `<span class="status-badge ${total<40?"danger":"warn"}">⚠ Need ${Math.max(0,80-total).toFixed(1)} total + ${Math.max(0,30-guided).toFixed(1)} guided hrs</span>`;
   document.getElementById("soa-status").innerHTML = ciaMet
     ? '<span class="status-badge ok">✓ Compliant (via CIA)</span>'
     : '<span class="status-badge warn">⚠ Meet CIA requirement first</span>';
@@ -307,37 +394,81 @@ function updateDashboardUI(total, guided, selfStudy, count) {
   document.getElementById("sheet-link").href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
 }
 
-// ── Setup ────────────────────────────────────────────────────────────────────
-function openSettings() {
-  const savedCsv = localStorage.getItem("cpd_csv_url") || "";
-  document.getElementById("sheet-input").value = savedCsv || "";
-  document.getElementById("key-input").value = apiKey || "";
-  document.getElementById("setup-modal").style.display = "flex";
-}
-
-function setupAndStart() {
-  const sheetVal = document.getElementById("sheet-input").value.trim();
-  const keyVal   = document.getElementById("key-input").value.trim();
-
-  if (!keyVal || !keyVal.startsWith("sk-ant-")) {
-    alert("Please enter a valid Anthropic API key (starts with sk-ant-)");
+// ── Voice input ──────────────────────────────────────────────────────────────
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    addMessage("agent", "Voice input isn't supported in this browser. Try Chrome or Edge!");
     return;
   }
-
-  // Store CSV URL directly if it looks like a published CSV
-  if (sheetVal.includes("/pub?") || sheetVal.includes("PACX")) {
-    localStorage.setItem("cpd_csv_url", sheetVal);
-  } else {
-    localStorage.setItem("cpd_csv_url", "");
-    sheetId = sheetVal ? extractSheetId(sheetVal) : DEFAULT_SHEET_ID;
-    localStorage.setItem("cpd_sheet_id", sheetId);
+  if (isListening) {
+    recognition.stop();
+    return;
   }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
 
-  apiKey = keyVal;
-  localStorage.setItem("cpd_api_key", apiKey);
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById("mic-btn").classList.add("active");
+    document.getElementById("user-input").placeholder = "Listening...";
+    document.getElementById("user-input").classList.add("listening");
+  };
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
+    document.getElementById("user-input").value = transcript;
+    autoResize(document.getElementById("user-input"));
+  };
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById("mic-btn").classList.remove("active");
+    document.getElementById("user-input").placeholder = "Type, speak, or upload a screenshot / CSV...";
+    document.getElementById("user-input").classList.remove("listening");
+  };
+  recognition.onerror = (e) => {
+    isListening = false;
+    document.getElementById("mic-btn").classList.remove("active");
+    document.getElementById("user-input").classList.remove("listening");
+  };
+  recognition.start();
+}
 
-  document.getElementById("setup-modal").style.display = "none";
-  loadDashboard();
+// ── File / Screenshot upload ─────────────────────────────────────────────────
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      pendingImage = { base64: ev.target.result.split(",")[1], mediaType: file.type };
+      const wrap = document.getElementById("img-preview-wrap");
+      wrap.innerHTML = `
+        <div class="img-preview">
+          <img src="${ev.target.result}" alt="preview">
+          <button class="remove" onclick="clearImage()">✕</button>
+        </div>`;
+      document.getElementById("user-input").placeholder = "Describe what to do with this image, or just hit send...";
+    };
+    reader.readAsDataURL(file);
+  } else if (file.name.endsWith(".csv") || file.name.endsWith(".xlsx")) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      document.getElementById("user-input").value = `I'm uploading my SOA CPD export CSV. Please convert all activities to our log format:\n\n${text.slice(0,3000)}`;
+      autoResize(document.getElementById("user-input"));
+    };
+    reader.readAsText(file);
+  }
+  e.target.value = "";
+}
+
+function clearImage() {
+  pendingImage = null;
+  document.getElementById("img-preview-wrap").innerHTML = "";
+  document.getElementById("user-input").placeholder = "Type, speak, or upload a screenshot / CSV...";
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
@@ -345,59 +476,51 @@ function addMessage(role, content, logCard) {
   const msgs = document.getElementById("messages");
   const div  = document.createElement("div");
   div.className = `msg ${role}`;
-
   const avatar = document.createElement("div");
   avatar.className = `avatar ${role}`;
   avatar.textContent = role === "agent" ? "AI" : "SY";
-
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.innerHTML = content.replace(/\n/g, "<br>");
-
-  if (logCard) {
-    const card = document.createElement("div");
-    card.className = "log-card";
-    card.innerHTML = logCard;
-    bubble.appendChild(card);
-  }
-
-  div.appendChild(avatar);
-  div.appendChild(bubble);
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  bubble.innerHTML = content.replace(/\n/g,"<br>");
+  if (logCard) { const c = document.createElement("div"); c.className="log-card"; c.innerHTML=logCard; bubble.appendChild(c); }
+  div.appendChild(avatar); div.appendChild(bubble);
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
 }
 
 function showTyping() {
   const msgs = document.getElementById("messages");
-  const div  = document.createElement("div");
-  div.className = "msg agent";
-  div.id = "typing";
-  div.innerHTML = `<div class="avatar agent">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  const div = document.createElement("div");
+  div.className="msg agent"; div.id="typing";
+  div.innerHTML=`<div class="avatar agent">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
 }
-function removeTyping() { const t = document.getElementById("typing"); if (t) t.remove(); }
+function removeTyping() { const t=document.getElementById("typing"); if(t) t.remove(); }
 
 async function sendMessage() {
   const input = document.getElementById("user-input");
   const text  = input.value.trim();
-  if (!text) return;
-  if (!apiKey) { alert("Please set up your API key first (refresh the page)."); return; }
+  if (!text && !pendingImage) return;
+  if (!apiKey) { alert("Please set your API key in Settings."); return; }
 
-  input.value = "";
-  autoResize(input);
+  const displayText = text || "📸 Image uploaded";
+  input.value = ""; autoResize(input);
   document.getElementById("send-btn").disabled = true;
 
-  addMessage("user", text);
+  addMessage("user", displayText);
   showTyping();
 
-  const ctx = `Shawn's current CPD status:
-- Total hours: ${dashboardData.total.toFixed(1)} / 80 required
-- Guided hours: ${dashboardData.guided.toFixed(1)} / 30 required
-- Self-study hours: ${dashboardData.selfStudy.toFixed(1)}
-- Activities logged: ${dashboardData.count}
-- CIA compliant: ${dashboardData.total >= 80 && dashboardData.guided >= 30 ? "YES" : "NOT YET"}
-- Still needs: ${Math.max(0, 80 - dashboardData.total).toFixed(1)} total hrs, ${Math.max(0, 30 - dashboardData.guided).toFixed(1)} guided hrs`;
+  const { total, guided, selfStudy, count, profHrs, byYear } = dashboardData;
+  const currentYear = new Date().getFullYear();
+
+  const ctx = `Shawn's current CPD status (rolling 2-year window):
+- Total: ${total.toFixed(1)} / 80 hrs required
+- Guided: ${guided.toFixed(1)} / 30 hrs required  
+- Self-Study: ${selfStudy.toFixed(1)} hrs
+- Professionalism: ${profHrs.toFixed(1)} hrs logged
+- Activities: ${count}
+- By year: ${JSON.stringify(byYear)}
+- CIA compliant: ${total>=80&&guided>=30?"YES":"NOT YET"}
+- Still needs: ${Math.max(0,80-total).toFixed(1)} total, ${Math.max(0,30-guided).toFixed(1)} guided`;
 
   const system = `You are a CPD tracking assistant for Shawn Yu, FSA — a Canadian actuary and dual member of CIA and SOA.
 
@@ -406,22 +529,35 @@ CIA CPD Rules (rolling 2-year window):
 - Minimum 30 Guided hours
 - Guided = live webinars with Q&A, in-person seminars, employer sessions with discussion, recorded webinars (CIA allows)
 - Self-Study = reading, e-learning, self-paced courses, books
-- Must include professionalism component
+- Mandatory professionalism component (must have some hours marked as professionalism)
 - CIA compliance = automatic SOA compliance for dual members
-- Annual compliance statement required
+- Annual compliance statement required, records kept 5 years
 
 ${ctx}
 
 Your jobs:
-1. LOG activities: extract date, description, provider, type (Guided/Self-Study), category (Technical/Professionalism/Business & Management/Other), hours, professionalism (Y/N). Ask for anything missing. When ready to log, end your message with READY_TO_LOG: followed by a JSON object.
-2. TRACK: tell Shawn exactly where he stands and what he needs.
-3. FIND free CPD: suggest free SOA webcasts, CIA events, industry webinars.
-4. ADVISE: explain what qualifies and why.
+1. LOG activities: extract date, description, provider, type (Guided/Self-Study), category (Technical/Professionalism/Business & Management/Other), hours, professionalism (Y/N). Ask for anything missing. When ready, end with READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided or Self-Study","category":"Technical","hours":1.0,"professionalism":"Y or N","notes":"..."}
+2. READ screenshots: if you see an image of a CPD log, conference agenda, or webinar confirmation, extract the activity details and offer to log them.
+3. CONVERT CSV: if given SOA export CSV data, parse all activities and suggest logging them.
+4. TRACK: tell Shawn exactly where he stands.
+5. FIND free CPD: suggest free SOA webcasts, CIA events, industry webinars.
+6. PACE advice: help Shawn distribute hours evenly across the 2-year window.
 
-Be conversational, specific, and helpful. You know CIA/SOA rules well.
-When logging, end with: READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided or Self-Study","category":"Technical","hours":1.0,"professionalism":"Y or N","notes":"..."}`;
+Be conversational, specific, and helpful.`;
 
-  conversationHistory.push({ role: "user", content: text });
+  // Build message content
+  let msgContent;
+  if (pendingImage) {
+    msgContent = [
+      { type: "image", source: { type: "base64", media_type: pendingImage.mediaType, data: pendingImage.base64 }},
+      { type: "text", text: text || "Please read this image and extract any CPD activity details you can see." }
+    ];
+    clearImage();
+  } else {
+    msgContent = text;
+  }
+
+  conversationHistory.push({ role: "user", content: msgContent });
 
   try {
     const res = await fetch(ANTHROPIC_API, {
@@ -432,24 +568,18 @@ When logging, end with: READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true"
       },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1000,
-        system,
-        messages: conversationHistory
-      })
+      body: JSON.stringify({ model: MODEL, max_tokens: 1500, system, messages: conversationHistory })
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err = await res.json().catch(()=>({}));
       throw new Error(err.error?.message || `API error ${res.status}`);
     }
 
     const data = await res.json();
-    let reply = (data.content || []).map(b => b.text || "").join("").trim();
-    conversationHistory.push({ role: "assistant", content: reply });
+    let reply = (data.content||[]).map(b=>b.text||"").join("").trim();
+    conversationHistory.push({ role:"assistant", content: reply });
 
-    // Parse log card
     let logCard = null;
     const logMatch = reply.match(/READY_TO_LOG:\s*(\{[\s\S]*?\})/);
     if (logMatch) {
@@ -457,17 +587,17 @@ When logging, end with: READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","
         const ld = JSON.parse(logMatch[1]);
         reply = reply.replace(/READY_TO_LOG:[\s\S]*/, "").trim();
         logCard = `
-          <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log this activity:</div>
+          <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log:</div>
           <div class="lc-row"><span class="lc-label">Date</span><span>${ld.date}</span></div>
           <div class="lc-row"><span class="lc-label">Activity</span><span>${ld.description}</span></div>
           <div class="lc-row"><span class="lc-label">Provider</span><span>${ld.provider}</span></div>
           <div class="lc-row"><span class="lc-label">Type</span><span><strong>${ld.type}</strong></span></div>
           <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${ld.hours} hrs</strong></span></div>
           <div class="lc-row"><span class="lc-label">Category</span><span>${ld.category}</span></div>
-          <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism === 'Y' ? '✓ Yes' : 'No'}</span></div>
-          ${ld.notes ? `<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>` : ""}
+          <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism==="Y"?"✓ Yes":"No"}</span></div>
+          ${ld.notes?`<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>`:""}
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
-            👉 Add this row to your <a href="https://docs.google.com/spreadsheets/d/${sheetId}/edit" target="_blank" style="color:#1D9E75;font-weight:600;">Google Sheet</a>, then click Refresh Dashboard below.
+            👉 Add this row to your <a href="https://docs.google.com/spreadsheets/d/${sheetId}/edit" target="_blank" style="color:#1D9E75;font-weight:600;">Google Sheet</a>, then click below to refresh.
           </div>
           <button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`;
       } catch(e) {}
@@ -478,36 +608,43 @@ When logging, end with: READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","
 
   } catch(err) {
     removeTyping();
-    addMessage("agent", `I hit an error: ${err.message}\n\nDouble-check your API key is valid and has credits. You can reset it by refreshing the page.`);
+    addMessage("agent", `Error: ${err.message}\n\nCheck your API key in Settings and make sure it has credits.`);
   }
 
   document.getElementById("send-btn").disabled = false;
   document.getElementById("user-input").focus();
 }
 
-function quickSend(text) {
-  document.getElementById("user-input").value = text;
-  sendMessage();
+function quickSend(t) { document.getElementById("user-input").value=t; sendMessage(); }
+function handleKey(e) { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function autoResize(el) { el.style.height="auto"; el.style.height=Math.min(el.scrollHeight,100)+"px"; }
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById("sheet-input").value = csvUrl || "";
+  document.getElementById("key-input").value   = apiKey || "";
+  document.getElementById("setup-modal").style.display = "flex";
 }
-function handleKey(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-function autoResize(el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
+
+function setupAndStart() {
+  const csv = document.getElementById("sheet-input").value.trim();
+  const key = document.getElementById("key-input").value.trim();
+  if (!key||!key.startsWith("sk-ant-")) { alert("Please enter a valid Anthropic API key (starts with sk-ant-)"); return; }
+  csvUrl = csv || DEFAULT_CSV;
+  apiKey = key;
+  localStorage.setItem("cpd_csv_url", csvUrl);
+  localStorage.setItem("cpd_api_key", apiKey);
+  document.getElementById("setup-modal").style.display = "none";
+  loadDashboard();
+}
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-async function init() {
-  document.getElementById("sheet-link").href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
-  await loadDashboard();
-  addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent.\n\nI can see your Google Sheet is connected. Here's what I can do:\n\n• Log a new CPD activity — just describe it in plain English\n• Tell you exactly where you stand toward your CIA/SOA requirement\n• Find free guided CPD content online\n• Answer any questions about what qualifies\n\nWhat would you like to do?`);
-}
-
 window.onload = () => {
-  // Pre-fill modal with saved values
-  const savedCsv = localStorage.getItem("cpd_csv_url") || "";
-  document.getElementById("sheet-input").value = savedCsv || (sheetId ? `https://docs.google.com/spreadsheets/d/${sheetId}/edit` : "");
-
-  // If both are saved, skip modal
-  if (sheetId && apiKey) {
+  document.getElementById("sheet-input").value = csvUrl || "";
+  if (apiKey && csvUrl) {
     document.getElementById("setup-modal").style.display = "none";
-    init();
+    loadDashboard();
+    addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\nWhat would you like to do?`);
   }
 };
 </script>
