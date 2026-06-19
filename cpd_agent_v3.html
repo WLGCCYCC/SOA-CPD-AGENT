@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPD Agent — Shawn Yu</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #1B3A6B; --teal: #1D9E75; --teal-lt: #E1F5EE;
+  --amber: #F59E0B; --amber-lt: #FAEEDA;
+  --red: #DC2626; --red-lt: #FEE2E2;
+  --gray-100: #F1F5F9; --gray-200: #E2E8F0;
+  --gray-400: #94A3B8; --gray-600: #475569; --gray-800: #1E293B;
+  --white: #FFFFFF; --radius: 10px;
+  --font: 'Inter', system-ui, sans-serif;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+body { font-family: var(--font); background: var(--gray-100); color: var(--gray-800); min-height: 100vh; display: flex; flex-direction: column; }
+
+header { background: var(--navy); color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+header h1 { font-size: 16px; font-weight: 600; }
+header .credit { font-size: 11px; opacity: 0.5; }
+
+.app { display: flex; flex: 1; height: calc(100vh - 52px); overflow: hidden; }
+
+.dashboard { width: 300px; flex-shrink: 0; background: var(--white); border-right: 1px solid var(--gray-200); overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.dash-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-400); padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); }
+.metric-card { background: var(--gray-100); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.metric-card .label { font-size: 11px; color: var(--gray-600); }
+.metric-card .value { font-size: 22px; font-weight: 600; color: var(--gray-800); }
+.metric-card .sub { font-size: 11px; color: var(--gray-400); }
+.progress-bar-bg { height: 6px; background: var(--gray-200); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.progress-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s ease; }
+.progress-bar-fill.warn { background: var(--amber); }
+.progress-bar-fill.danger { background: var(--red); }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 99px; }
+.status-badge.ok { background: var(--teal-lt); color: var(--teal); }
+.status-badge.warn { background: var(--amber-lt); color: #92400E; }
+.status-badge.danger { background: var(--red-lt); color: var(--red); }
+.sheet-link { font-size: 11px; color: var(--teal); text-decoration: none; display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--gray-200); }
+.sheet-link:hover { text-decoration: underline; }
+
+.chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.msg { display: flex; gap: 10px; max-width: 680px; }
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.avatar.agent { background: var(--navy); color: white; }
+.avatar.user  { background: var(--teal); color: white; }
+.bubble { padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.6; max-width: 520px; }
+.msg.agent .bubble { background: var(--white); border: 1px solid var(--gray-200); border-top-left-radius: 4px; }
+.msg.user .bubble  { background: var(--navy); color: white; border-top-right-radius: 4px; }
+.log-card { margin-top: 10px; background: var(--teal-lt); border: 1px solid #9FE1CB; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.log-card .lc-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.log-card .lc-label { color: var(--gray-600); font-size: 12px; }
+.typing { display: flex; gap: 4px; padding: 6px 0; align-items: center; }
+.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400); animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+.input-area { padding: 14px 24px; background: var(--white); border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: 10px; }
+.quick-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.quick-btn { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--gray-200); background: var(--gray-100); color: var(--gray-600); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+.quick-btn:hover { background: var(--teal-lt); border-color: var(--teal); color: var(--teal); }
+.input-row { display: flex; gap: 10px; align-items: flex-end; }
+textarea { flex: 1; resize: none; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 10px 14px; font-size: 14px; font-family: var(--font); color: var(--gray-800); outline: none; line-height: 1.5; max-height: 120px; overflow-y: auto; transition: border-color 0.15s; }
+textarea:focus { border-color: var(--teal); }
+.send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--navy); border: none; color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+.send-btn:hover { background: var(--teal); }
+.send-btn:disabled { background: var(--gray-200); cursor: not-allowed; }
+.footer-note { font-size: 11px; color: var(--gray-400); text-align: center; }
+
+/* Setup Modal */
+.modal-bg { position: fixed; inset: 0; background: rgba(15,30,60,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: white; border-radius: 16px; padding: 32px; width: 500px; max-width: 92vw; display: flex; flex-direction: column; gap: 16px; }
+.modal h2 { font-size: 18px; font-weight: 600; color: var(--navy); }
+.modal p { font-size: 13px; color: var(--gray-600); line-height: 1.7; }
+.modal label { font-size: 12px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 5px; }
+.modal input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; font-family: var(--font); outline: none; color: var(--gray-800); }
+.modal input:focus { border-color: var(--teal); }
+.modal input[type=password] { letter-spacing: 0.1em; }
+.modal-btn { padding: 11px 20px; background: var(--navy); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: background 0.15s; }
+.modal-btn:hover { background: var(--teal); }
+.modal-note { font-size: 11px; color: var(--gray-400); }
+.divider { border: none; border-top: 1px solid var(--gray-200); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚖️ CPD Agent</h1>
+  <span style="font-size:12px;opacity:0.6;">CIA &amp; SOA Continuing Professional Development Tracker</span>
+  <span class="credit">Built by Shawn Yu, FSA</span>
+</header>
+
+<div class="app">
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="dash-title">Your CPD Progress</div>
+
+    <div class="metric-card">
+      <div class="label">Total Hours (2-yr rolling)</div>
+      <div class="value" id="val-total">—</div>
+      <div style="display:flex;justify-content:space-between;margin-top:2px;">
+        <span class="sub" id="pct-total"></span>
+        <span class="sub">min 80 hrs</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-total" style="width:0%"></div></div>
+    </div>
+
+    <div class="metric-card">
+      <div class="label">Guided CPD Hours</div>
+      <div class="value" id="val-guided">—</div>
+      <div style="display:flex;justify-content:space-between;margin-top:2px;">
+        <span class="sub" id="pct-guided"></span>
+        <span class="sub">min 30 hrs</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-guided" style="width:0%"></div></div>
+    </div>
+
+    <div class="metric-card">
+      <div class="label">Self-Study Hours</div>
+      <div class="value" id="val-self">—</div>
+      <div class="sub">No minimum required</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="label">CIA Compliance</div>
+      <div style="margin-top:6px;" id="cia-status"><span class="status-badge warn">⏳ Loading...</span></div>
+    </div>
+
+    <div class="metric-card">
+      <div class="label">SOA Compliance</div>
+      <div style="margin-top:6px;" id="soa-status"><span class="status-badge warn">⏳ Loading...</span></div>
+    </div>
+
+    <div class="metric-card">
+      <div class="label">Activities Logged</div>
+      <div class="value" id="val-count">—</div>
+    </div>
+
+    <a class="sheet-link" id="sheet-link" href="#" target="_blank">📊 Open Google Sheet →</a>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-panel">
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickSend('How am I doing on my CPD this year?')">📊 Check my progress</button>
+        <button class="quick-btn" onclick="quickSend('I just attended a 1-hour webinar today, let me describe it')">➕ Log an activity</button>
+        <button class="quick-btn" onclick="quickSend('What do I still need to be compliant?')">✅ What do I still need?</button>
+        <button class="quick-btn" onclick="quickSend('Find me free guided CPD activities online')">🔍 Find free CPD</button>
+      </div>
+      <div class="input-row">
+        <textarea id="user-input" rows="1" placeholder="Describe a CPD activity, or ask anything..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+      </div>
+      <div class="footer-note">Built by Shawn Yu, FSA &nbsp;·&nbsp; CIA &amp; SOA CPD Agent v1.0 &nbsp;·&nbsp; Your API key is stored locally only</div>
+    </div>
+  </div>
+</div>
+
+<!-- Setup Modal -->
+<div class="modal-bg" id="setup-modal">
+  <div class="modal">
+    <h2>⚖️ CPD Agent Setup</h2>
+    <p>Connect your Google Sheet and Anthropic API key to get started. Both are stored only on your device — nothing is sent to any server except Anthropic's API directly.</p>
+    <hr class="divider">
+
+    <div>
+      <label>Google Sheet URL</label>
+      <input type="text" id="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/..." />
+      <p style="font-size:11px;color:#94A3B8;margin-top:5px;">Make sure sharing is set to "Anyone with the link can view" (or edit).</p>
+    </div>
+
+    <div>
+      <label>Anthropic API Key</label>
+      <input type="password" id="key-input" placeholder="sk-ant-api03-..." />
+      <p style="font-size:11px;color:#94A3B8;margin-top:5px;">Get your key at platform.anthropic.com. It's stored only in your browser's local storage.</p>
+    </div>
+
+    <button class="modal-btn" onclick="setupAndStart()">Connect & Start →</button>
+    <p class="modal-note">Built by Shawn Yu, FSA — for actuaries, by an actuary.</p>
+  </div>
+</div>
+
+<script>
+const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-6";
+const DEFAULT_SHEET_ID = "1IeyR6GX6LsEfsDpwXbemI0NtsRm7iwud";
+
+let sheetId = localStorage.getItem("cpd_sheet_id") || DEFAULT_SHEET_ID;
+let apiKey  = localStorage.getItem("cpd_api_key") || "";
+let conversationHistory = [];
+let dashboardData = { total: 0, guided: 0, selfStudy: 0, count: 0 };
+
+function extractSheetId(url) {
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : url.trim();
+}
+
+// ── Dashboard: use Google's public CSV export (no CORS issues) ───────────────
+async function loadDashboard() {
+  try {
+    // Publish-to-web CSV URL — works without auth if sheet is shared publicly
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSyNdWOsX0wyMDTb0uQgCh3v7Kcifr5ySaoxPbo5kUeWQYl2bMYbsvE_lhEoOxCjQ/pub?gid=624783096&single=true&output=csv";
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Sheet not accessible");
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    let total = 0, guided = 0, selfStudy = 0, count = 0;
+    rows.forEach(r => {
+      // Hours is column F (index 5), Type is column D (index 3)
+      const hrs = parseFloat(Object.values(r)[5] || 0);
+      const type = (Object.values(r)[3] || "").toLowerCase();
+      if (!isNaN(hrs) && hrs > 0) {
+        total += hrs;
+        count++;
+        if (type.includes("guided")) guided += hrs;
+        else selfStudy += hrs;
+      }
+    });
+
+    dashboardData = { total, guided, selfStudy, count };
+    updateDashboardUI(total, guided, selfStudy, count);
+  } catch(e) {
+    console.warn("Dashboard load error:", e.message);
+    // Show placeholder — sheet may need to be published
+    document.getElementById("val-total").textContent = "—";
+    document.getElementById("cia-status").innerHTML =
+      '<span class="status-badge warn">⚠ Share sheet publicly to load</span>';
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split("\n");
+  if (lines.length < 2) return [];
+  const headers = splitCSVLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || "").trim(); });
+    return obj;
+  });
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = "", inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; }
+    else if (ch === ',' && !inQuote) { result.push(cur.trim()); cur = ""; }
+    else { cur += ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function updateDashboardUI(total, guided, selfStudy, count) {
+  document.getElementById("val-total").textContent = total.toFixed(1) + " hrs";
+  document.getElementById("val-guided").textContent = guided.toFixed(1) + " hrs";
+  document.getElementById("val-self").textContent = selfStudy.toFixed(1) + " hrs";
+  document.getElementById("val-count").textContent = count;
+
+  const totalPct  = Math.min(100, (total / 80) * 100);
+  const guidedPct = Math.min(100, (guided / 30) * 100);
+
+  const barTotal = document.getElementById("bar-total");
+  barTotal.style.width = totalPct + "%";
+  if (totalPct < 50) barTotal.classList.add("danger");
+  else if (totalPct < 100) barTotal.classList.add("warn");
+
+  const barGuided = document.getElementById("bar-guided");
+  barGuided.style.width = guidedPct + "%";
+  if (guidedPct < 50) barGuided.classList.add("danger");
+  else if (guidedPct < 100) barGuided.classList.add("warn");
+
+  document.getElementById("pct-total").textContent  = total.toFixed(1) + " / 80 hrs";
+  document.getElementById("pct-guided").textContent = guided.toFixed(1) + " / 30 hrs";
+
+  const ciaMet = total >= 80 && guided >= 30;
+  document.getElementById("cia-status").innerHTML = ciaMet
+    ? '<span class="status-badge ok">✓ Compliant</span>'
+    : `<span class="status-badge ${total < 40 ? 'danger' : 'warn'}">⚠ ${Math.max(0,80-total).toFixed(1)} total hrs + ${Math.max(0,30-guided).toFixed(1)} guided hrs needed</span>`;
+
+  document.getElementById("soa-status").innerHTML = ciaMet
+    ? '<span class="status-badge ok">✓ Compliant (via CIA)</span>'
+    : '<span class="status-badge warn">⚠ Meet CIA requirement first</span>';
+
+  document.getElementById("sheet-link").href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+function setupAndStart() {
+  const sheetVal = document.getElementById("sheet-input").value.trim();
+  const keyVal   = document.getElementById("key-input").value.trim();
+
+  if (!keyVal || !keyVal.startsWith("sk-ant-")) {
+    alert("Please enter a valid Anthropic API key (starts with sk-ant-)");
+    return;
+  }
+
+  sheetId = sheetVal ? extractSheetId(sheetVal) : DEFAULT_SHEET_ID;
+  apiKey  = keyVal;
+
+  localStorage.setItem("cpd_sheet_id", sheetId);
+  localStorage.setItem("cpd_api_key", apiKey);
+
+  document.getElementById("setup-modal").style.display = "none";
+  init();
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────────────
+function addMessage(role, content, logCard) {
+  const msgs = document.getElementById("messages");
+  const div  = document.createElement("div");
+  div.className = `msg ${role}`;
+
+  const avatar = document.createElement("div");
+  avatar.className = `avatar ${role}`;
+  avatar.textContent = role === "agent" ? "AI" : "SY";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML = content.replace(/\n/g, "<br>");
+
+  if (logCard) {
+    const card = document.createElement("div");
+    card.className = "log-card";
+    card.innerHTML = logCard;
+    bubble.appendChild(card);
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById("messages");
+  const div  = document.createElement("div");
+  div.className = "msg agent";
+  div.id = "typing";
+  div.innerHTML = `<div class="avatar agent">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { const t = document.getElementById("typing"); if (t) t.remove(); }
+
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const text  = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { alert("Please set up your API key first (refresh the page)."); return; }
+
+  input.value = "";
+  autoResize(input);
+  document.getElementById("send-btn").disabled = true;
+
+  addMessage("user", text);
+  showTyping();
+
+  const ctx = `Shawn's current CPD status:
+- Total hours: ${dashboardData.total.toFixed(1)} / 80 required
+- Guided hours: ${dashboardData.guided.toFixed(1)} / 30 required
+- Self-study hours: ${dashboardData.selfStudy.toFixed(1)}
+- Activities logged: ${dashboardData.count}
+- CIA compliant: ${dashboardData.total >= 80 && dashboardData.guided >= 30 ? "YES" : "NOT YET"}
+- Still needs: ${Math.max(0, 80 - dashboardData.total).toFixed(1)} total hrs, ${Math.max(0, 30 - dashboardData.guided).toFixed(1)} guided hrs`;
+
+  const system = `You are a CPD tracking assistant for Shawn Yu, FSA — a Canadian actuary and dual member of CIA and SOA.
+
+CIA CPD Rules (rolling 2-year window):
+- 80 total hours (Guided + Self-Study)
+- Minimum 30 Guided hours
+- Guided = live webinars with Q&A, in-person seminars, employer sessions with discussion, recorded webinars (CIA allows)
+- Self-Study = reading, e-learning, self-paced courses, books
+- Must include professionalism component
+- CIA compliance = automatic SOA compliance for dual members
+- Annual compliance statement required
+
+${ctx}
+
+Your jobs:
+1. LOG activities: extract date, description, provider, type (Guided/Self-Study), category (Technical/Professionalism/Business & Management/Other), hours, professionalism (Y/N). Ask for anything missing. When ready to log, end your message with READY_TO_LOG: followed by a JSON object.
+2. TRACK: tell Shawn exactly where he stands and what he needs.
+3. FIND free CPD: suggest free SOA webcasts, CIA events, industry webinars.
+4. ADVISE: explain what qualifies and why.
+
+Be conversational, specific, and helpful. You know CIA/SOA rules well.
+When logging, end with: READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided or Self-Study","category":"Technical","hours":1.0,"professionalism":"Y or N","notes":"..."}`;
+
+  conversationHistory.push({ role: "user", content: text });
+
+  try {
+    const res = await fetch(ANTHROPIC_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1000,
+        system,
+        messages: conversationHistory
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    let reply = (data.content || []).map(b => b.text || "").join("").trim();
+    conversationHistory.push({ role: "assistant", content: reply });
+
+    // Parse log card
+    let logCard = null;
+    const logMatch = reply.match(/READY_TO_LOG:\s*(\{[\s\S]*?\})/);
+    if (logMatch) {
+      try {
+        const ld = JSON.parse(logMatch[1]);
+        reply = reply.replace(/READY_TO_LOG:[\s\S]*/, "").trim();
+        logCard = `
+          <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log this activity:</div>
+          <div class="lc-row"><span class="lc-label">Date</span><span>${ld.date}</span></div>
+          <div class="lc-row"><span class="lc-label">Activity</span><span>${ld.description}</span></div>
+          <div class="lc-row"><span class="lc-label">Provider</span><span>${ld.provider}</span></div>
+          <div class="lc-row"><span class="lc-label">Type</span><span><strong>${ld.type}</strong></span></div>
+          <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${ld.hours} hrs</strong></span></div>
+          <div class="lc-row"><span class="lc-label">Category</span><span>${ld.category}</span></div>
+          <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism === 'Y' ? '✓ Yes' : 'No'}</span></div>
+          ${ld.notes ? `<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>` : ""}
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
+            👉 Add this row to your <a href="https://docs.google.com/spreadsheets/d/${sheetId}/edit" target="_blank" style="color:#1D9E75;font-weight:600;">Google Sheet</a>, then click Refresh Dashboard below.
+          </div>
+          <button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`;
+      } catch(e) {}
+    }
+
+    removeTyping();
+    addMessage("agent", reply, logCard);
+
+  } catch(err) {
+    removeTyping();
+    addMessage("agent", `I hit an error: ${err.message}\n\nDouble-check your API key is valid and has credits. You can reset it by refreshing the page.`);
+  }
+
+  document.getElementById("send-btn").disabled = false;
+  document.getElementById("user-input").focus();
+}
+
+function quickSend(text) {
+  document.getElementById("user-input").value = text;
+  sendMessage();
+}
+function handleKey(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  document.getElementById("sheet-link").href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+  await loadDashboard();
+  addMessage("agent", `Hi Shawn! 👋 I'm your CPD agent.\n\nI can see your Google Sheet is connected. Here's what I can do:\n\n• Log a new CPD activity — just describe it in plain English\n• Tell you exactly where you stand toward your CIA/SOA requirement\n• Find free guided CPD content online\n• Answer any questions about what qualifies\n\nWhat would you like to do?`);
+}
+
+window.onload = () => {
+  // Pre-fill modal with saved values
+  document.getElementById("sheet-input").value = sheetId
+    ? `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
+    : "";
+
+  // If both are saved, skip modal
+  if (sheetId && apiKey) {
+    document.getElementById("setup-modal").style.display = "none";
+    init();
+  }
+};
+</script>
+</body>
+</html>
