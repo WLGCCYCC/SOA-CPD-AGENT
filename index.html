@@ -250,6 +250,11 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
       <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Your normal sheet link — used only for the convenience button</p>
     </div>
     <div>
+      <label>Write Endpoint URL (Apps Script) — optional</label>
+      <input type="text" id="write-url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+      <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Enables the agent to log activities directly into your sheet</p>
+    </div>
+    <div>
       <label>Anthropic API Key</label>
       <input type="password" id="key-input" placeholder="sk-ant-api03-..." />
       <p style="font-size:11px;color:#94A3B8;margin-top:4px;">Get yours at platform.anthropic.com · Stored locally only, never shared</p>
@@ -279,6 +284,22 @@ let pendingImage = null;
 let recognition = null;
 let isListening = false;
 let libraryCache = "";
+let writeUrl = localStorage.getItem("cpd_write_url") || "";
+
+async function writeToSheet(logData) {
+  if (!writeUrl) return { success: false, error: "No write endpoint configured" };
+  try {
+    const res = await fetch(writeUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" }, // text/plain avoids CORS preflight on Apps Script
+      body: JSON.stringify(logData)
+    });
+    const result = await res.json();
+    return result;
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
 
 async function loadLibrary() {
   try {
@@ -676,6 +697,8 @@ Jobs: log activities (end with READY_TO_LOG: {json}), read screenshots/CSVs, tra
       try {
         const ld = JSON.parse(logMatch[1]);
         reply = reply.replace(/READY_TO_LOG:[\s\S]*/, "").trim();
+        const ldId = "log_" + Date.now();
+        window["_pendingLog_" + ldId] = ld;
         logCard = `
           <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log:</div>
           <div class="lc-row"><span class="lc-label">Date</span><span>${ld.date}</span></div>
@@ -686,10 +709,13 @@ Jobs: log activities (end with READY_TO_LOG: {json}), read screenshots/CSVs, tra
           <div class="lc-row"><span class="lc-label">Category</span><span>${ld.category}</span></div>
           <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism==="Y"?"✓ Yes":"No"}</span></div>
           ${ld.notes?`<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>`:""}
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
-            👉 Add this row to your Google Sheet (use the link in the left sidebar), then click below to refresh.
+          <div id="log-status-${ldId}" style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
+            ${writeUrl ? "Click below to add this directly to your sheet." : "Add this row to your Google Sheet manually, then refresh."}
           </div>
-          <button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`;
+          ${writeUrl
+            ? `<button onclick="confirmWrite('${ldId}')" id="write-btn-${ldId}" style="margin-top:8px;padding:6px 16px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;">✓ Add to Sheet</button>`
+            : `<button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`
+          }`;
       } catch(e) {}
     }
 
@@ -705,6 +731,28 @@ Jobs: log activities (end with READY_TO_LOG: {json}), read screenshots/CSVs, tra
   document.getElementById("user-input").focus();
 }
 
+async function confirmWrite(ldId) {
+  const ld = window["_pendingLog_" + ldId];
+  if (!ld) return;
+  const btn = document.getElementById("write-btn-" + ldId);
+  const status = document.getElementById("log-status-" + ldId);
+  btn.disabled = true;
+  btn.textContent = "Adding...";
+
+  const result = await writeToSheet(ld);
+
+  if (result.success) {
+    btn.textContent = "✓ Added!";
+    btn.style.background = "#1D9E75";
+    status.innerHTML = "✓ Successfully added to your sheet (row " + result.row + ").";
+    await loadDashboard();
+  } else {
+    btn.textContent = "✗ Failed — retry";
+    btn.disabled = false;
+    status.innerHTML = "⚠ Error: " + (result.error || "Unknown error") + ". Try adding manually instead.";
+  }
+}
+
 function quickSend(t) { document.getElementById("user-input").value=t; sendMessage(); }
 function handleKey(e) { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();} }
 function autoResize(el) { el.style.height="auto"; el.style.height=Math.min(el.scrollHeight,100)+"px"; }
@@ -715,6 +763,7 @@ function openSettings() {
   document.getElementById("key-input").value   = apiKey || "";
   document.getElementById("library-input").value = localStorage.getItem("cpd_library_csv_url") || "";
   document.getElementById("edit-url-input").value = localStorage.getItem("cpd_edit_url") || "";
+  document.getElementById("write-url-input").value = writeUrl || "";
   document.getElementById("setup-modal").style.display = "flex";
 }
 
@@ -731,6 +780,8 @@ function setupAndStart() {
   if (lib) localStorage.setItem("cpd_library_csv_url", lib);
   const editUrl = document.getElementById("edit-url-input").value.trim();
   if (editUrl) localStorage.setItem("cpd_edit_url", editUrl);
+  const writeUrlVal = document.getElementById("write-url-input").value.trim();
+  if (writeUrlVal) { writeUrl = writeUrlVal; localStorage.setItem("cpd_write_url", writeUrl); }
   document.getElementById("setup-modal").style.display = "none";
   loadDashboard();
   loadLibrary();
