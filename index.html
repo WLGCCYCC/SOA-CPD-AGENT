@@ -221,8 +221,9 @@ async function loadDashboard() {
     let total = 0, guided = 0, selfStudy = 0, count = 0;
     rows.forEach(r => {
       // Try named columns first, fall back to index
-      const hrs = parseFloat(r["Hours"] || r["hours"] || Object.values(r)[5] || 0);
-      const type = (r["Type"] || r["Type\n(Guided / Self-Study)"] || Object.values(r)[3] || "").toLowerCase();
+      const vals = Object.values(r);
+      const hrs = parseFloat(r["Hours"] || vals[5] || 0);
+      const type = (r["Type (Guided / Self-Study)"] || r["Type"] || vals[3] || "").toLowerCase();
       if (!isNaN(hrs) && hrs > 0) {
         total += hrs;
         count++;
@@ -250,7 +251,7 @@ function parseCSV(text) {
   const firstCell = splitCSVLine(lines[0])[0].replace(/"/g,"").trim();
   if (!firstCell.match(/^(Date|\d{4})/i)) headerIdx = 1;
   if (lines.length <= headerIdx + 1) return [];
-  const headers = splitCSVLine(lines[headerIdx]);
+  const headers = splitCSVLine(lines[headerIdx]).map(h => h.replace(/\n/g," ").replace(/\r/g,"").trim());
   return lines.slice(headerIdx + 1).map(line => {
     const vals = splitCSVLine(line);
     const obj = {};
