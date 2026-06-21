@@ -92,8 +92,10 @@ You'll end up with two separate CSV URLs — one for your log, one for the share
 ### Step 5 — Open the Agent and Connect Everything
 
 1. Go to **[https://wlgccycc.github.io/SOA-CPD-AGENT](https://wlgccycc.github.io/SOA-CPD-AGENT)**
-2. Paste your **CPD Log CSV URL**, your **Free CPD Library CSV URL** (optional), and your **API key**
+2. Enter **your name**, your **CPD Log CSV URL**, your **Free CPD Library CSV URL** (optional), your **Google Sheet edit link** (optional, for the convenience "Open Sheet" button), and your **API key**
 3. Click **Connect & Start**
+
+The setup screen is personalized — it'll greet you by name and never shows anyone else's data. Each person who opens this page for the first time goes through their own setup.
 
 ---
 
@@ -125,8 +127,18 @@ function doPost(e) {
 
     var lastRow = sheet.getLastRow();
     var targetRow = lastRow + 1;
+    var numCols = 10;
 
-    sheet.getRange(targetRow, 1, 1, 10).setValues([[
+    var newRange = sheet.getRange(targetRow, 1, 1, numCols);
+
+    // Copy formatting from the row above (if it exists) so new rows look consistent
+    if (lastRow >= 3) {
+      var sourceRange = sheet.getRange(lastRow, 1, 1, numCols);
+      sourceRange.copyTo(newRange, {formatOnly: true});
+    }
+
+    // Write the actual values
+    newRange.setValues([[
       data.date || "",
       data.description || "",
       data.provider || "",
@@ -138,6 +150,14 @@ function doPost(e) {
       data.notes || "",
       "Y"
     ]]);
+
+    // Re-apply consistent alignment and number format explicitly as a safety net
+    sheet.getRange(targetRow, 1, 1, numCols).setHorizontalAlignment("center");
+    sheet.getRange(targetRow, 2, 1, 1).setHorizontalAlignment("left");  // Description stays left-aligned
+    sheet.getRange(targetRow, 3, 1, 1).setHorizontalAlignment("left");  // Provider stays left-aligned
+    sheet.getRange(targetRow, 9, 1, 1).setHorizontalAlignment("left");  // Notes stays left-aligned
+    sheet.getRange(targetRow, 6, 1, 1).setNumberFormat("0.00");          // Hours formatted to 2 decimals
+    sheet.getRange(targetRow, 1, 1, 1).setNumberFormat("yyyy-mm-dd");    // Date formatted consistently
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
@@ -170,6 +190,8 @@ function doGet(e) {
    > This warning is normal — it's standard for any new Apps Script project, including ones you write yourself.
 10. Copy the **Web app URL** it gives you (ends in `/exec`)
 
+> ⚠️ **If you ever update this script later** (e.g. a new version is released), pasting in new code and saving isn't enough — you must also go to **Deploy → Manage deployments**, click the pencil/edit icon on your existing deployment, choose **New version** under "Version," and click **Deploy** again. Otherwise the live endpoint keeps running the old code.
+
 ### Connect it to the agent
 
 1. Open the CPD Agent → click **⚙️ Settings**
@@ -188,7 +210,9 @@ Describe it in plain English, or click the 🎤 mic and speak it:
 
 > *"I attended a 1.5 hour SOA webinar on IFRS 17 this morning"*
 
-The agent extracts the details, asks about anything missing, and shows a card with the row to copy into your sheet.
+You can also describe **multiple activities in one message** — the agent will summarize each one separately and give you a separate confirmation card (and write button) for each.
+
+The agent extracts the details, asks about anything missing before logging — it won't guess or skip fields — and shows a card with the row to copy (or write, if you've set up direct sheet writing) into your sheet.
 
 ---
 
@@ -197,6 +221,12 @@ The agent extracts the details, asks about anything missing, and shows a card wi
 1. Export your activities as CSV from the SOA CPD Tracker
 2. Click the **📎 paperclip button** in the agent and upload the file
 3. The agent converts everything to our format
+
+---
+
+## Editing or Deleting a Logged Activity
+
+The agent can only **add** new rows — it cannot edit or delete existing ones, even with direct sheet writing enabled. If you made a mistake or need to remove a duplicate, open your Google Sheet directly and edit or delete the row by hand. This is intentional — automated deletion risks removing the wrong row, so it's left as a manual, low-risk action.
 
 ---
 
@@ -237,6 +267,12 @@ Make sure your Google Sheet is published correctly (Step 3), and that the CSV UR
 
 **Is this officially affiliated with the CIA or SOA?**
 No. This is an independent tool built by an actuary for personal and community use. It is not endorsed by either organization. Always verify compliance through official channels.
+
+**Can I edit or delete a logged activity through the agent?**
+No — the agent can only add new rows. Edit or delete directly in your Google Sheet.
+
+**Why does a date I mentioned show up wrong?**
+The agent uses today's actual date as its reference point, so "today," "yesterday," or a date without a year should resolve correctly. If something still looks off, just specify the full date (e.g. "June 17, 2026") to be safe.
 
 ---
 
