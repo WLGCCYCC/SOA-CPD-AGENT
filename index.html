@@ -618,7 +618,7 @@ function addMessage(role, content, logCard) {
   } else {
     bubble.innerHTML = content.replace(/\n/g,"<br>");
   }
-  if (logCard) { const c = document.createElement("div"); c.className="log-card"; c.innerHTML=logCard; bubble.appendChild(c); }
+  if (logCard) { const c = document.createElement("div"); c.innerHTML=logCard; bubble.appendChild(c); }
   div.appendChild(avatar); div.appendChild(bubble);
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
 }
@@ -663,6 +663,7 @@ Jobs: track progress, find free CPD (check library first), give pace advice, rea
 
 LOGGING (important): When the user describes a CPD activity, you must ask for any of these that are missing before logging: date, description, provider, hours, type (Guided/Self-Study), professionalism (Y/N). Do not assume or guess values for description, provider, or category. Once you have everything, show a plain-text summary for confirmation, then on the NEXT message (after the user confirms) output exactly this format with no missing keys:
 READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided" or "Self-Study","category":"Technical" or "Professionalism" or "Business & Management" or "Other","hours":1.0,"professionalism":"Y" or "N","notes":"..."}
+If the user describes MULTIPLE activities at once, output one READY_TO_LOG: line per activity, each on its own line, right after each other.
 Every key must have a real value — never leave a field blank or omit it. Be concise and helpful.`;
 
   // Build message content
@@ -703,36 +704,17 @@ Every key must have a real value — never leave a field blank or omit it. Be co
     conversationHistory.push({ role:"assistant", content: reply });
 
     let logCard = null;
-    const logMatch = reply.match(/READY_TO_LOG:\s*(\{[\s\S]*?\})/);
-    if (logMatch) {
-      try {
-        const ld = JSON.parse(logMatch[1]);
-        reply = reply.replace(/READY_TO_LOG:[\s\S]*/, "").trim();
-        const ldId = "log_" + Date.now();
-        window["_pendingLog_" + ldId] = ld;
-
-        const missing = ["date","description","provider","type","hours"].filter(k => !ld[k] && ld[k] !== 0);
-        const safe = (v, fallback="—") => (v === undefined || v === null || v === "") ? fallback : v;
-
-        logCard = `
-          <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log:</div>
-          <div class="lc-row"><span class="lc-label">Date</span><span>${safe(ld.date)}</span></div>
-          <div class="lc-row"><span class="lc-label">Activity</span><span>${safe(ld.description)}</span></div>
-          <div class="lc-row"><span class="lc-label">Provider</span><span>${safe(ld.provider)}</span></div>
-          <div class="lc-row"><span class="lc-label">Type</span><span><strong>${safe(ld.type)}</strong></span></div>
-          <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${safe(ld.hours)} hrs</strong></span></div>
-          <div class="lc-row"><span class="lc-label">Category</span><span>${safe(ld.category)}</span></div>
-          <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism==="Y"?"✓ Yes":"No"}</span></div>
-          ${ld.notes?`<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>`:""}
-          ${missing.length > 0 ? `<div style="margin-top:8px;padding:6px 10px;background:#FEE2E2;border-radius:6px;font-size:12px;color:#DC2626;">⚠ Missing: ${missing.join(", ")} — please provide before logging.</div>` : ""}
-          <div id="log-status-${ldId}" style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
-            ${missing.length > 0 ? "" : (writeUrl ? "Click below to add this directly to your sheet." : "Add this row to your Google Sheet manually, then refresh.")}
-          </div>
-          ${missing.length > 0 ? "" : (writeUrl
-            ? `<button onclick="confirmWrite('${ldId}')" id="write-btn-${ldId}" style="margin-top:8px;padding:6px 16px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;">✓ Add to Sheet</button>`
-            : `<button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`
-          )}`;
-      } catch(e) {}
+    const logMatches = [...reply.matchAll(/READY_TO_LOG:\s*(\{[\s\S]*?\})/g)];
+    if (logMatches.length > 0) {
+      reply = reply.replace(/READY_TO_LOG:\s*\{[\s\S]*?\}\s*/g, "").trim();
+      const cards = [];
+      logMatches.forEach(m => {
+        try {
+          const ld = JSON.parse(m[1]);
+          cards.push(buildLogCard(ld));
+        } catch(e) {}
+      });
+      logCard = cards.join('<div style="height:10px;"></div>');
     }
 
     removeTyping();
@@ -767,6 +749,34 @@ async function confirmWrite(ldId) {
     btn.disabled = false;
     status.innerHTML = "⚠ Error: " + (result.error || "Unknown error") + ". Try adding manually instead.";
   }
+}
+
+function buildLogCard(ld) {
+  const ldId = "log_" + Date.now() + "_" + Math.floor(Math.random()*10000);
+  window["_pendingLog_" + ldId] = ld;
+
+  const missing = ["date","description","provider","type","hours"].filter(k => !ld[k] && ld[k] !== 0);
+  const safe = (v, fallback="—") => (v === undefined || v === null || v === "") ? fallback : v;
+
+  return `<div class="log-card">
+    <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log:</div>
+    <div class="lc-row"><span class="lc-label">Date</span><span>${safe(ld.date)}</span></div>
+    <div class="lc-row"><span class="lc-label">Activity</span><span>${safe(ld.description)}</span></div>
+    <div class="lc-row"><span class="lc-label">Provider</span><span>${safe(ld.provider)}</span></div>
+    <div class="lc-row"><span class="lc-label">Type</span><span><strong>${safe(ld.type)}</strong></span></div>
+    <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${safe(ld.hours)} hrs</strong></span></div>
+    <div class="lc-row"><span class="lc-label">Category</span><span>${safe(ld.category)}</span></div>
+    <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism==="Y"?"✓ Yes":"No"}</span></div>
+    ${ld.notes?`<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>`:""}
+    ${missing.length > 0 ? `<div style="margin-top:8px;padding:6px 10px;background:#FEE2E2;border-radius:6px;font-size:12px;color:#DC2626;">⚠ Missing: ${missing.join(", ")} — please provide before logging.</div>` : ""}
+    <div id="log-status-${ldId}" style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
+      ${missing.length > 0 ? "" : (writeUrl ? "Click below to add this directly to your sheet." : "Add this row to your Google Sheet manually, then refresh.")}
+    </div>
+    ${missing.length > 0 ? "" : (writeUrl
+      ? `<button onclick="confirmWrite('${ldId}')" id="write-btn-${ldId}" style="margin-top:8px;padding:6px 16px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;">✓ Add to Sheet</button>`
+      : `<button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`
+    )}
+  </div>`;
 }
 
 function quickSend(t) { document.getElementById("user-input").value=t; sendMessage(); }
