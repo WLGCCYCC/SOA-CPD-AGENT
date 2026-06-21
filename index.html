@@ -649,7 +649,8 @@ async function sendMessage() {
 
   const ctx = `Status: ${total.toFixed(1)}/80 total hrs, ${guided.toFixed(1)}/30 guided hrs, ${selfStudy.toFixed(1)} self-study, ${profHrs.toFixed(1)} professionalism hrs, ${count} activities. By year: ${JSON.stringify(byYear)}. CIA compliant: ${total>=80&&guided>=30?"YES":"NOT YET"}.`;
 
-  const system = `CPD assistant for ${userName} (Canadian actuary, CIA+SOA dual member).
+  const todayStr = new Date().toISOString().split("T")[0];
+  const system = `CPD assistant for ${userName} (Canadian actuary, CIA+SOA dual member). Today's date is ${todayStr} — use this as the reference point for any relative dates (e.g. "today", "yesterday", "last week") and assume the current year unless the user specifies otherwise.
 
 CIA rules: 80 total hrs (2-yr rolling), min 30 Guided hrs, mandatory professionalism component. Guided=live/recorded webinars w/ Q&A, seminars. Self-Study=reading, e-learning. CIA compliance = auto SOA compliance.
 
@@ -658,7 +659,11 @@ ${ctx}
 Free CPD Library (already found, check before searching again):
 ${libraryCache || "Empty — search and suggest the user add findings to their 'Free CPD Library' sheet tab."}
 
-Jobs: log activities (end with READY_TO_LOG: {json}), read screenshots/CSVs, track progress, find free CPD (check library first), give pace advice. Be concise and helpful.`;
+Jobs: track progress, find free CPD (check library first), give pace advice, read screenshots/CSVs.
+
+LOGGING (important): When the user describes a CPD activity, you must ask for any of these that are missing before logging: date, description, provider, hours, type (Guided/Self-Study), professionalism (Y/N). Do not assume or guess values for description, provider, or category. Once you have everything, show a plain-text summary for confirmation, then on the NEXT message (after the user confirms) output exactly this format with no missing keys:
+READY_TO_LOG: {"date":"YYYY-MM-DD","description":"...","provider":"...","type":"Guided" or "Self-Study","category":"Technical" or "Professionalism" or "Business & Management" or "Other","hours":1.0,"professionalism":"Y" or "N","notes":"..."}
+Every key must have a real value — never leave a field blank or omit it. Be concise and helpful.`;
 
   // Build message content
   let msgContent;
@@ -705,23 +710,28 @@ Jobs: log activities (end with READY_TO_LOG: {json}), read screenshots/CSVs, tra
         reply = reply.replace(/READY_TO_LOG:[\s\S]*/, "").trim();
         const ldId = "log_" + Date.now();
         window["_pendingLog_" + ldId] = ld;
+
+        const missing = ["date","description","provider","type","hours"].filter(k => !ld[k] && ld[k] !== 0);
+        const safe = (v, fallback="—") => (v === undefined || v === null || v === "") ? fallback : v;
+
         logCard = `
           <div style="font-size:12px;font-weight:600;color:#0F6E56;margin-bottom:8px;">📋 Ready to log:</div>
-          <div class="lc-row"><span class="lc-label">Date</span><span>${ld.date}</span></div>
-          <div class="lc-row"><span class="lc-label">Activity</span><span>${ld.description}</span></div>
-          <div class="lc-row"><span class="lc-label">Provider</span><span>${ld.provider}</span></div>
-          <div class="lc-row"><span class="lc-label">Type</span><span><strong>${ld.type}</strong></span></div>
-          <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${ld.hours} hrs</strong></span></div>
-          <div class="lc-row"><span class="lc-label">Category</span><span>${ld.category}</span></div>
+          <div class="lc-row"><span class="lc-label">Date</span><span>${safe(ld.date)}</span></div>
+          <div class="lc-row"><span class="lc-label">Activity</span><span>${safe(ld.description)}</span></div>
+          <div class="lc-row"><span class="lc-label">Provider</span><span>${safe(ld.provider)}</span></div>
+          <div class="lc-row"><span class="lc-label">Type</span><span><strong>${safe(ld.type)}</strong></span></div>
+          <div class="lc-row"><span class="lc-label">Hours</span><span><strong>${safe(ld.hours)} hrs</strong></span></div>
+          <div class="lc-row"><span class="lc-label">Category</span><span>${safe(ld.category)}</span></div>
           <div class="lc-row"><span class="lc-label">Professionalism</span><span>${ld.professionalism==="Y"?"✓ Yes":"No"}</span></div>
           ${ld.notes?`<div class="lc-row"><span class="lc-label">Notes</span><span>${ld.notes}</span></div>`:""}
+          ${missing.length > 0 ? `<div style="margin-top:8px;padding:6px 10px;background:#FEE2E2;border-radius:6px;font-size:12px;color:#DC2626;">⚠ Missing: ${missing.join(", ")} — please provide before logging.</div>` : ""}
           <div id="log-status-${ldId}" style="margin-top:10px;padding-top:8px;border-top:1px solid #9FE1CB;font-size:12px;color:#0F6E56;">
-            ${writeUrl ? "Click below to add this directly to your sheet." : "Add this row to your Google Sheet manually, then refresh."}
+            ${missing.length > 0 ? "" : (writeUrl ? "Click below to add this directly to your sheet." : "Add this row to your Google Sheet manually, then refresh.")}
           </div>
-          ${writeUrl
+          ${missing.length > 0 ? "" : (writeUrl
             ? `<button onclick="confirmWrite('${ldId}')" id="write-btn-${ldId}" style="margin-top:8px;padding:6px 16px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;">✓ Add to Sheet</button>`
             : `<button onclick="loadDashboard()" style="margin-top:8px;padding:5px 14px;background:#1D9E75;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--font);">↻ Refresh Dashboard</button>`
-          }`;
+          )}`;
       } catch(e) {}
     }
 
@@ -774,6 +784,11 @@ function openSettings() {
   document.getElementById("setup-modal").style.display = "flex";
 }
 
+function showGreeting() {
+  const firstName = userName.split(" ")[0].replace(",", "");
+  addMessage("agent", `Hi ${firstName}! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\n⚠️ **Disclaimer:** This is an experimental tool that may contain bugs or make classification mistakes. You are responsible for verifying your own CPD compliance with the CIA/SOA. Always double-check entries before relying on them for your official compliance statement.\n\nWhat would you like to do?`);
+}
+
 function setupAndStart() {
   const csv = document.getElementById("sheet-input").value.trim();
   const key = document.getElementById("key-input").value.trim();
@@ -796,6 +811,7 @@ function setupAndStart() {
   document.getElementById("setup-modal").style.display = "none";
   loadDashboard();
   loadLibrary();
+  if (document.getElementById("messages").children.length === 0) showGreeting();
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -805,8 +821,7 @@ window.onload = () => {
     document.getElementById("setup-modal").style.display = "none";
     loadDashboard();
     loadLibrary();
-    const firstName = userName.split(" ")[0].replace(",", "");
-    addMessage("agent", `Hi ${firstName}! 👋 I'm your CPD agent — v4 now with voice, screenshot, and file upload.\n\nYour dashboard is loading. Here's what I can do:\n\n• 🎤 Speak your activity — click the mic and just say what you did\n• 📸 Upload a screenshot — of a webinar, agenda, or SOA tracker\n• 📄 Upload your SOA CSV export — I'll convert it automatically\n• ✍️ Type anything — ask me anything about your CPD\n\n⚠️ **Disclaimer:** This is an experimental tool that may contain bugs or make classification mistakes. You are responsible for verifying your own CPD compliance with the CIA/SOA. Always double-check entries before relying on them for your official compliance statement.\n\nWhat would you like to do?`);
+    showGreeting();
   }
 };
 </script>
