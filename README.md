@@ -40,7 +40,7 @@ Both work fine. Pick whichever you prefer.
 
 ### Step 1 — Download the Excel Template
 
-Download the file **`1_CPD_Tracker_Template.xlsx`** from this repo (click it, then click the download button).
+Download the file **`CPD_Tracker_Template.xlsx`** from this repo (click it, then click the download button).
 
 This is your personal CPD log. It has 4 tabs:
 - **CPD Log** — your activities
